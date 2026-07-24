@@ -273,6 +273,10 @@ test("buildAdminReport marks fixture fallback as degraded", () => {
   assert.equal(report.overall, "degraded");
   assert.equal(report.egressBlocked, true);
   assert.equal(report.productionAlertsSuppressed, true);
+  assert.deepEqual(report.requiredEgressDomains, [
+    "api.usaspending.gov",
+    "www.usaspending.gov",
+  ]);
   assert.ok(report.alerts.some((a) => a.code === "EGRESS_BLOCKED"));
   assert.ok(report.alerts.some((a) => a.code === "PRODUCTION_ALERTS_SUPPRESSED"));
   assert.match(report.actionRequired, /api\.usaspending\.gov/);

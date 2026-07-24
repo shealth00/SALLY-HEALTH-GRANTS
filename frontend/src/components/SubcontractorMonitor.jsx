@@ -121,6 +121,13 @@ function SubcontractorMonitor() {
           {status.admin.actionRequired && (
             <p className="mt-1">{status.admin.actionRequired}</p>
           )}
+          {status.admin.egressBlocked &&
+            Array.isArray(status.admin.requiredEgressDomains) &&
+            status.admin.requiredEgressDomains.length > 0 && (
+              <p className="mt-1">
+                Required egress: {status.admin.requiredEgressDomains.join(", ")}
+              </p>
+            )}
           {(status.admin.alerts || []).slice(0, 4).map((alert, index) => (
             <p key={`${alert.code}-${index}`} className="mt-1">
               [{alert.severity}] {alert.code}: {alert.message}

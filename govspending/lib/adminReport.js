@@ -2,6 +2,12 @@
  * Admin-level health report for the govspending subcontractor workflow.
  */
 
+/** Domains the hourly monitor needs on the cloud egress allowlist for live mode. */
+export const REQUIRED_EGRESS_DOMAINS = [
+  "api.usaspending.gov",
+  "www.usaspending.gov",
+];
+
 /**
  * @param {string|null|undefined} liveError
  */
@@ -112,5 +118,6 @@ export function buildAdminReport({
     liveQueryFailureCount: failedQueries.length,
     egressBlocked: isEgressLikeFailure(liveError),
     productionAlertsSuppressed,
+    requiredEgressDomains: [...REQUIRED_EGRESS_DOMAINS],
   };
 }
