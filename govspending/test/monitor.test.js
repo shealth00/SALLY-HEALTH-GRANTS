@@ -346,6 +346,20 @@ test("computeContinuity increments degraded streak and tracks last live success"
   assert.equal(legacy.degradedStreak, PROLONGED_DEGRADED_THRESHOLD + 1);
   assert.equal(legacy.firstDegradedAt, "2026-07-26T15:30:00.000Z");
 
+  const skewed = computeContinuity({
+    overall: "degraded",
+    sourceMode: "fixtures-fallback",
+    ranAt: "2026-07-26T21:00:00.000Z",
+    previousAdmin: {
+      degradedStreak: 7,
+      firstDegradedAt: "2026-07-24T20:09:34.894Z",
+    },
+    previousRanAt: "2026-07-24T20:09:34.894Z",
+  });
+  assert.equal(skewed.degradedStreak, 8);
+  // Reject clock-skewed marker; estimate from hourly streak instead.
+  assert.equal(skewed.firstDegradedAt, "2026-07-26T14:00:00.000Z");
+
   const second = computeContinuity({
     overall: "degraded",
     sourceMode: "fixtures-fallback",

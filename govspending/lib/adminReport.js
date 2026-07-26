@@ -64,12 +64,39 @@ export function computeContinuity({
 
   let firstDegradedAt = null;
   if (overall === "degraded") {
-    // Prefer prior marker; for legacy degraded files without it, approximate
-    // from the previous run timestamp, else stamp this run as the start.
-    firstDegradedAt =
-      previousAdmin?.firstDegradedAt ||
-      (priorStreak > 0 ? previousRanAt : null) ||
-      ranAt;
+    const ranMs = Date.parse(ranAt);
+    const priorStartMs = previousAdmin?.firstDegradedAt
+      ? Date.parse(previousAdmin.firstDegradedAt)
+      : NaN;
+    // Keep prior marker when clocks look consistent with hourly cadence.
+    // Reject markers warped by VM clock skew (age >> streak).
+    const maxAgeMs = Math.max(priorStreak + 1, 1) * 3 * 60 * 60 * 1000;
+    if (
+      Number.isFinite(priorStartMs) &&
+      Number.isFinite(ranMs) &&
+      priorStartMs <= ranMs &&
+      ranMs - priorStartMs <= maxAgeMs
+    ) {
+      firstDegradedAt = previousAdmin.firstDegradedAt;
+    } else {
+      const prevMs = previousRanAt ? Date.parse(previousRanAt) : NaN;
+      const maxGapMs = Math.max(priorStreak, 1) * 2 * 60 * 60 * 1000;
+      if (
+        priorStreak > 0 &&
+        Number.isFinite(prevMs) &&
+        Number.isFinite(ranMs) &&
+        prevMs <= ranMs &&
+        ranMs - prevMs <= maxGapMs
+      ) {
+        firstDegradedAt = previousRanAt;
+      } else if (priorStreak > 0 && Number.isFinite(ranMs)) {
+        firstDegradedAt = new Date(
+          ranMs - priorStreak * 60 * 60 * 1000
+        ).toISOString();
+      } else {
+        firstDegradedAt = ranAt;
+      }
+    }
   }
 
   return { degradedStreak, lastLiveSuccessAt, firstDegradedAt };
