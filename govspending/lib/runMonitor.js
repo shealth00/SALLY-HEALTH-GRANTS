@@ -153,9 +153,11 @@ export async function runMonitor(options = {}) {
         admin,
       };
 
+      let wroteLastRun = false;
       if (options.write !== false) {
         await mkdir(dataDir, { recursive: true });
         await writeFile(lastRunPath, `${JSON.stringify(lastRun, null, 2)}\n`);
+        wroteLastRun = true;
       }
 
       return {
@@ -163,6 +165,8 @@ export async function runMonitor(options = {}) {
         lastRun,
         diff: { added: [], removed: [], changed: [], hasChanges: false },
         paths: { opportunitiesPath, lastRunPath },
+        wroteOpportunities: false,
+        wroteLastRun,
       };
     }
 
@@ -243,6 +247,8 @@ export async function runMonitor(options = {}) {
     admin,
   };
 
+  let wroteOpportunities = false;
+  let wroteLastRun = false;
   if (options.write !== false) {
     await mkdir(dataDir, { recursive: true });
     // Admin: avoid churning opportunities.json on no-delta fixture fallbacks.
@@ -253,8 +259,10 @@ export async function runMonitor(options = {}) {
         opportunitiesPath,
         `${JSON.stringify(snapshot, null, 2)}\n`
       );
+      wroteOpportunities = true;
     }
     await writeFile(lastRunPath, `${JSON.stringify(lastRun, null, 2)}\n`);
+    wroteLastRun = true;
   }
 
   return {
@@ -262,5 +270,7 @@ export async function runMonitor(options = {}) {
     lastRun,
     diff,
     paths: { opportunitiesPath, lastRunPath },
+    wroteOpportunities,
+    wroteLastRun,
   };
 }

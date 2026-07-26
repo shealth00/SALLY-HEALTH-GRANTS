@@ -77,8 +77,14 @@ async function main() {
   }
 
   if (!args.dryRun) {
-    console.log(`\nWrote ${result.paths.opportunitiesPath}`);
-    console.log(`Wrote ${result.paths.lastRunPath}`);
+    if (result.wroteOpportunities) {
+      console.log(`\nWrote ${result.paths.opportunitiesPath}`);
+    } else {
+      console.log("\nSkipped opportunities.json write (no-delta fixture fallback).");
+    }
+    if (result.wroteLastRun) {
+      console.log(`Wrote ${result.paths.lastRunPath}`);
+    }
   }
 }
 
