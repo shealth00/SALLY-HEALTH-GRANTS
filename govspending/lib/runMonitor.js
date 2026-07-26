@@ -7,7 +7,7 @@ import {
 } from "./usaspendingClient.js";
 import { normalizeOpportunity, dedupeOpportunities } from "./normalize.js";
 import { computeWindow, diffOpportunities } from "./diff.js";
-import { buildAdminReport } from "./adminReport.js";
+import { buildAdminReport, computeContinuity } from "./adminReport.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const GOVSPENDING_ROOT = path.resolve(__dirname, "..");
@@ -36,6 +36,13 @@ export async function runMonitor(options = {}) {
     previous = JSON.parse(await readFile(opportunitiesPath, "utf8"));
   } catch {
     previous = { opportunities: [], generatedAt: null, source: {} };
+  }
+
+  let previousLastRun = null;
+  try {
+    previousLastRun = JSON.parse(await readFile(lastRunPath, "utf8"));
+  } catch {
+    previousLastRun = null;
   }
 
   const client = new UsaSpendingClient({
@@ -114,19 +121,34 @@ export async function runMonitor(options = {}) {
       // Admin safeguard: never replace a live snapshot with fixtures.
       preservedLiveSnapshot = true;
       const generatedAt = (options.now || new Date()).toISOString();
+      const summary = {
+        total: (previous.opportunities || []).length,
+        subawards: (previous.opportunities || []).filter(
+          (o) => o.kind === "subaward"
+        ).length,
+        primeAwards: (previous.opportunities || []).filter(
+          (o) => o.kind === "prime_award"
+        ).length,
+        added: 0,
+        removed: 0,
+        changed: 0,
+      };
+      const continuity = computeContinuity({
+        overall: "degraded",
+        sourceMode,
+        ranAt: generatedAt,
+        previousAdmin: previousLastRun?.admin,
+        previousRanAt: previousLastRun?.ranAt,
+        previousSourceMode: previousLastRun?.sourceMode,
+      });
       const admin = buildAdminReport({
         sourceMode,
         liveError,
         queryReports: adminQueryReports,
-        summary: previous.summary || {
-          total: (previous.opportunities || []).length,
-          subawards: 0,
-          primeAwards: 0,
-          added: 0,
-          removed: 0,
-          changed: 0,
-        },
+        summary: previous.summary || summary,
         preservedLiveSnapshot,
+        degradedStreak: continuity.degradedStreak,
+        lastLiveSuccessAt: continuity.lastLiveSuccessAt,
       });
 
       const lastRun = {
@@ -134,18 +156,7 @@ export async function runMonitor(options = {}) {
         sourceMode,
         liveError,
         window,
-        summary: {
-          total: (previous.opportunities || []).length,
-          subawards: (previous.opportunities || []).filter(
-            (o) => o.kind === "subaward"
-          ).length,
-          primeAwards: (previous.opportunities || []).filter(
-            (o) => o.kind === "prime_award"
-          ).length,
-          added: 0,
-          removed: 0,
-          changed: 0,
-        },
+        summary,
         newOpportunityIds: [],
         removedOpportunityIds: [],
         hasChanges: false,
@@ -225,6 +236,14 @@ export async function runMonitor(options = {}) {
     opportunities,
   };
 
+  const continuity = computeContinuity({
+    overall: sourceMode === "fixtures-fallback" ? "degraded" : "healthy",
+    sourceMode,
+    ranAt: generatedAt,
+    previousAdmin: previousLastRun?.admin,
+    previousRanAt: previousLastRun?.ranAt,
+    previousSourceMode: previousLastRun?.sourceMode,
+  });
   const admin = buildAdminReport({
     sourceMode,
     liveError,
@@ -232,6 +251,8 @@ export async function runMonitor(options = {}) {
       sourceMode === "fixtures-fallback" ? adminQueryReports : queryReports,
     summary: snapshot.summary,
     preservedLiveSnapshot,
+    degradedStreak: continuity.degradedStreak,
+    lastLiveSuccessAt: continuity.lastLiveSuccessAt,
   });
 
   const lastRun = {

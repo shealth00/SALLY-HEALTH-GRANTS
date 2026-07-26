@@ -10,7 +10,12 @@ import {
 } from "../lib/usaspendingClient.js";
 import { normalizeOpportunity, dedupeOpportunities } from "../lib/normalize.js";
 import { diffOpportunities, computeWindow } from "../lib/diff.js";
-import { buildAdminReport, isEgressLikeFailure } from "../lib/adminReport.js";
+import {
+  buildAdminReport,
+  computeContinuity,
+  isEgressLikeFailure,
+  PROLONGED_DEGRADED_THRESHOLD,
+} from "../lib/adminReport.js";
 import { runMonitor, GOVSPENDING_ROOT } from "../lib/runMonitor.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -313,6 +318,50 @@ test("classifyUsaSpendingFetchError labels timeouts and egress failures", () => 
   const egress = classifyUsaSpendingFetchError(new Error("fetch failed"));
   assert.match(egress.message, /network\/egress failure/);
   assert.equal(isEgressLikeFailure(egress.message), true);
+});
+
+test("computeContinuity increments degraded streak and tracks last live success", () => {
+  const first = computeContinuity({
+    overall: "degraded",
+    sourceMode: "fixtures-fallback",
+    ranAt: "2026-07-26T16:00:00.000Z",
+    previousAdmin: null,
+  });
+  assert.equal(first.degradedStreak, 1);
+  assert.equal(first.lastLiveSuccessAt, null);
+
+  const second = computeContinuity({
+    overall: "degraded",
+    sourceMode: "fixtures-fallback",
+    ranAt: "2026-07-26T17:00:00.000Z",
+    previousAdmin: { degradedStreak: 2, lastLiveSuccessAt: "2026-07-26T10:00:00.000Z" },
+  });
+  assert.equal(second.degradedStreak, 3);
+  assert.equal(second.lastLiveSuccessAt, "2026-07-26T10:00:00.000Z");
+
+  const recovered = computeContinuity({
+    overall: "healthy",
+    sourceMode: "live",
+    ranAt: "2026-07-26T18:00:00.000Z",
+    previousAdmin: { degradedStreak: 5, lastLiveSuccessAt: "2026-07-26T10:00:00.000Z" },
+  });
+  assert.equal(recovered.degradedStreak, 0);
+  assert.equal(recovered.lastLiveSuccessAt, "2026-07-26T18:00:00.000Z");
+});
+
+test("buildAdminReport escalates prolonged degraded outages", () => {
+  const report = buildAdminReport({
+    sourceMode: "fixtures-fallback",
+    liveError: "USAspending network/egress failure: fetch failed",
+    queryReports: [],
+    summary: { added: 0 },
+    degradedStreak: PROLONGED_DEGRADED_THRESHOLD,
+    lastLiveSuccessAt: "2026-07-26T10:00:00.000Z",
+  });
+  assert.equal(report.overall, "degraded");
+  assert.equal(report.degradedStreak, PROLONGED_DEGRADED_THRESHOLD);
+  assert.equal(report.lastLiveSuccessAt, "2026-07-26T10:00:00.000Z");
+  assert.ok(report.alerts.some((a) => a.code === "PROLONGED_DEGRADED"));
 });
 
 test("fixtures-fallback with no delta only refreshes last-run heartbeat", async () => {

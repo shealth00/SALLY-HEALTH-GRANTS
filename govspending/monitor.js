@@ -33,20 +33,25 @@ async function main() {
     return;
   }
 
-  const { summary } = result.snapshot;
+  const summary = result.lastRun.summary || result.snapshot.summary || {};
+  const window = result.lastRun.window || result.snapshot.source?.window;
+  const sourceMode = result.lastRun.sourceMode || result.snapshot.source?.mode;
+  const liveError =
+    result.lastRun.liveError || result.snapshot.source?.liveError;
+
   console.log("USAspending subcontractor workflow monitor");
-  console.log(`Mode: ${result.snapshot.source.mode}`);
-  if (result.snapshot.source.liveError) {
-    console.log(`Live API error: ${result.snapshot.source.liveError}`);
+  console.log(`Mode: ${sourceMode}`);
+  if (liveError) {
+    console.log(`Live API error: ${liveError}`);
+  }
+  if (window?.startDate && window?.endDate) {
+    console.log(`Window: ${window.startDate} → ${window.endDate}`);
   }
   console.log(
-    `Window: ${result.snapshot.source.window.startDate} → ${result.snapshot.source.window.endDate}`
+    `Opportunities: ${summary.total ?? 0} (subawards=${summary.subawards ?? 0}, primes=${summary.primeAwards ?? 0})`
   );
   console.log(
-    `Opportunities: ${summary.total} (subawards=${summary.subawards}, primes=${summary.primeAwards})`
-  );
-  console.log(
-    `Delta: +${summary.added} / -${summary.removed} / ~${summary.changed}`
+    `Delta: +${summary.added ?? 0} / -${summary.removed ?? 0} / ~${summary.changed ?? 0}`
   );
 
   if (result.lastRun.preservedLiveSnapshot) {
@@ -59,8 +64,23 @@ async function main() {
     const admin = result.lastRun.admin;
     console.log("\nAdmin oversight");
     console.log(`Overall: ${admin.overall}`);
+    if (admin.degradedStreak != null) {
+      console.log(`Degraded streak: ${admin.degradedStreak}`);
+    }
+    if (admin.lastLiveSuccessAt) {
+      console.log(`Last live success: ${admin.lastLiveSuccessAt}`);
+    }
     if (admin.actionRequired) {
       console.log(`Action required: ${admin.actionRequired}`);
+    }
+    if (
+      admin.egressBlocked &&
+      Array.isArray(admin.requiredEgressDomains) &&
+      admin.requiredEgressDomains.length
+    ) {
+      console.log(
+        `Required egress: ${admin.requiredEgressDomains.join(", ")}`
+      );
     }
     for (const alert of admin.alerts) {
       console.log(`- [${alert.severity}] ${alert.code}: ${alert.message}`);

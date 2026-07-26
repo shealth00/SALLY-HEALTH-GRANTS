@@ -18,6 +18,43 @@ export function isEgressLikeFailure(liveError) {
   );
 }
 
+/** Consecutive degraded hourly runs before escalating admin attention. */
+export const PROLONGED_DEGRADED_THRESHOLD = 3;
+
+/**
+ * Compute consecutive degraded-run streak and last known live success.
+ * @param {string} overall
+ * @param {string} sourceMode
+ * @param {string} ranAt
+ * @param {object|null|undefined} previousAdmin
+ * @param {string|null|undefined} previousRanAt
+ * @param {string|null|undefined} previousSourceMode
+ */
+export function computeContinuity({
+  overall,
+  sourceMode,
+  ranAt,
+  previousAdmin = null,
+  previousRanAt = null,
+  previousSourceMode = null,
+}) {
+  const priorStreak = Number(previousAdmin?.degradedStreak) || 0;
+  const degradedStreak = overall === "degraded" ? priorStreak + 1 : 0;
+
+  let lastLiveSuccessAt = previousAdmin?.lastLiveSuccessAt || null;
+  if (sourceMode === "live" || sourceMode === "live-partial") {
+    lastLiveSuccessAt = ranAt;
+  } else if (
+    !lastLiveSuccessAt &&
+    (previousSourceMode === "live" || previousSourceMode === "live-partial") &&
+    previousRanAt
+  ) {
+    lastLiveSuccessAt = previousRanAt;
+  }
+
+  return { degradedStreak, lastLiveSuccessAt };
+}
+
 /**
  * @param {object} input
  * @param {string} input.sourceMode
@@ -25,6 +62,9 @@ export function isEgressLikeFailure(liveError) {
  * @param {object[]} input.queryReports
  * @param {object} input.summary
  * @param {boolean} [input.preservedLiveSnapshot]
+ * @param {number} [input.degradedStreak]
+ * @param {string|null} [input.lastLiveSuccessAt]
+ * @param {number} [input.prolongedDegradedThreshold]
  */
 export function buildAdminReport({
   sourceMode,
@@ -32,6 +72,9 @@ export function buildAdminReport({
   queryReports = [],
   summary,
   preservedLiveSnapshot = false,
+  degradedStreak = 0,
+  lastLiveSuccessAt = null,
+  prolongedDegradedThreshold = PROLONGED_DEGRADED_THRESHOLD,
 }) {
   const alerts = [];
   const failedQueries = queryReports.filter((q) => q.error);
@@ -84,6 +127,17 @@ export function buildAdminReport({
     });
   }
 
+  if (
+    degradedStreak >= prolongedDegradedThreshold &&
+    sourceMode === "fixtures-fallback"
+  ) {
+    alerts.push({
+      severity: "critical",
+      code: "PROLONGED_DEGRADED",
+      message: `Live USAspending monitoring has been degraded for ${degradedStreak} consecutive run(s). Production opportunity alerts remain suppressed until live reachability is restored.`,
+    });
+  }
+
   if (summary?.added > 0 && (sourceMode === "live" || sourceMode === "live-partial")) {
     alerts.push({
       severity: "info",
@@ -119,5 +173,7 @@ export function buildAdminReport({
     egressBlocked: isEgressLikeFailure(liveError),
     productionAlertsSuppressed,
     requiredEgressDomains: [...REQUIRED_EGRESS_DOMAINS],
+    degradedStreak,
+    lastLiveSuccessAt,
   };
 }

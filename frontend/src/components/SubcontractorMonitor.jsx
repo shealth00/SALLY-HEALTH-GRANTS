@@ -121,6 +121,21 @@ function SubcontractorMonitor() {
           {status.admin.actionRequired && (
             <p className="mt-1">{status.admin.actionRequired}</p>
           )}
+          {(status.admin.degradedStreak > 0 || status.admin.lastLiveSuccessAt) && (
+            <p className="mt-1">
+              {status.admin.degradedStreak > 0
+                ? `Degraded streak: ${status.admin.degradedStreak}`
+                : null}
+              {status.admin.degradedStreak > 0 && status.admin.lastLiveSuccessAt
+                ? " · "
+                : ""}
+              {status.admin.lastLiveSuccessAt
+                ? `Last live success: ${new Date(
+                    status.admin.lastLiveSuccessAt
+                  ).toLocaleString()}`
+                : null}
+            </p>
+          )}
           {status.admin.egressBlocked &&
             Array.isArray(status.admin.requiredEgressDomains) &&
             status.admin.requiredEgressDomains.length > 0 && (
