@@ -95,7 +95,11 @@ async function main() {
           (admin.ops.blockedOn ? ` blockedOn=${admin.ops.blockedOn}` : "") +
           (admin.ops.acceptOpportunityDeltas
             ? " acceptDeltas=yes"
-            : " acceptDeltas=no")
+            : " acceptDeltas=no") +
+          (admin.ops.extendedOutage ? " extendedOutage=yes" : "") +
+          (admin.ops.cadenceGapHours != null
+            ? ` cadenceGap=${admin.ops.cadenceGapHours}h`
+            : "")
       );
       for (const check of admin.ops.nextChecks || []) {
         console.log(`  · ${check}`);

@@ -53,10 +53,12 @@ Key alert codes:
 | `LIVE_API_UNAVAILABLE` | Live API failed for a non-egress reason |
 | `PRODUCTION_ALERTS_SUPPRESSED` | Fixture fallback must not drive opportunity actions (always set when `sourceMode` is `fixtures-fallback`) |
 | `PROLONGED_DEGRADED` | Live monitoring stayed degraded across consecutive hourly runs (default threshold: 3) |
+| `EXTENDED_OUTAGE` | Wall-clock outage ≥ 12h or degraded streak ≥ 12 (escalates to **P0**) |
+| `MISSED_HOURLY_CADENCE` | Gap since previous run exceeded ~2.5h (automation schedule risk) |
 | `PARTIAL_LIVE_QUERY_FAILURE` | One or more query lanes failed; others succeeded |
 | `PRESERVED_LIVE_SNAPSHOT` | Prior live snapshot kept instead of writing fixtures |
 
-Admin also exposes booleans `egressBlocked` and `productionAlertsSuppressed`, plus `requiredEgressDomains`, `degradedStreak`, `firstDegradedAt`, `lastLiveSuccessAt`, and a structured `ops` checklist (`priority`, `blockedOn`, `nextChecks`, `acceptOpportunityDeltas`, `outageStartedAt`, `outageAgeHours`) for machine-readable oversight. Prolonged egress outages escalate `actionRequired` to **P1**.
+Admin also exposes booleans `egressBlocked` and `productionAlertsSuppressed`, plus `requiredEgressDomains`, `degradedStreak`, `firstDegradedAt`, `lastLiveSuccessAt`, and a structured `ops` checklist (`priority`, `blockedOn`, `nextChecks`, `acceptOpportunityDeltas`, `outageStartedAt`, `outageAgeHours`, `cadenceGapHours`, `extendedOutage`) for machine-readable oversight. Prolonged egress outages escalate `actionRequired` to **P1**; extended outages (≥12h or streak ≥12) escalate to **P0**. Outage-start markers stay stable across missed hourly runs (cadence-aware continuity).
 
 Safeguards:
 

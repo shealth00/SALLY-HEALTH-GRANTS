@@ -151,6 +151,7 @@ export async function runMonitor(options = {}) {
         lastLiveSuccessAt: continuity.lastLiveSuccessAt,
         firstDegradedAt: continuity.firstDegradedAt,
         ranAt: generatedAt,
+        cadenceGapHours: continuity.cadenceGapHours,
       });
 
       const lastRun = {
@@ -257,6 +258,7 @@ export async function runMonitor(options = {}) {
     lastLiveSuccessAt: continuity.lastLiveSuccessAt,
     firstDegradedAt: continuity.firstDegradedAt,
     ranAt: generatedAt,
+    cadenceGapHours: continuity.cadenceGapHours,
   });
 
   const lastRun = {

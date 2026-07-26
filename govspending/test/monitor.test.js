@@ -15,6 +15,8 @@ import {
   computeContinuity,
   isEgressLikeFailure,
   PROLONGED_DEGRADED_THRESHOLD,
+  EXTENDED_OUTAGE_HOURS_THRESHOLD,
+  EXTENDED_OUTAGE_STREAK_THRESHOLD,
 } from "../lib/adminReport.js";
 import { runMonitor, GOVSPENDING_ROOT } from "../lib/runMonitor.js";
 
@@ -347,7 +349,7 @@ test("computeContinuity increments degraded streak and tracks last live success"
   // Legacy files lack firstDegradedAt; estimate from hourly streak.
   assert.equal(legacy.firstDegradedAt, "2026-07-26T13:30:00.000Z");
 
-  const skewed = computeContinuity({
+  const missedCadence = computeContinuity({
     overall: "degraded",
     sourceMode: "fixtures-fallback",
     ranAt: "2026-07-26T21:00:00.000Z",
@@ -357,9 +359,24 @@ test("computeContinuity increments degraded streak and tracks last live success"
     },
     previousRanAt: "2026-07-24T20:09:34.894Z",
   });
-  assert.equal(skewed.degradedStreak, 8);
-  // Reject clock-skewed marker; estimate from hourly streak instead.
-  assert.equal(skewed.firstDegradedAt, "2026-07-26T14:00:00.000Z");
+  assert.equal(missedCadence.degradedStreak, 8);
+  // Large cadence gap: keep wall-clock outage start (do not understate age).
+  assert.equal(missedCadence.firstDegradedAt, "2026-07-24T20:09:34.894Z");
+  assert.ok(missedCadence.cadenceGapHours > 2.5);
+
+  const skewedHealthyCadence = computeContinuity({
+    overall: "degraded",
+    sourceMode: "fixtures-fallback",
+    ranAt: "2026-07-26T21:00:00.000Z",
+    previousAdmin: {
+      degradedStreak: 7,
+      firstDegradedAt: "2026-07-24T20:09:34.894Z",
+    },
+    previousRanAt: "2026-07-26T20:00:00.000Z",
+  });
+  assert.equal(skewedHealthyCadence.degradedStreak, 8);
+  // Healthy hourly cadence + impossible age → reject clock-skewed marker.
+  assert.equal(skewedHealthyCadence.firstDegradedAt, "2026-07-26T14:00:00.000Z");
 
   const tooYoung = computeContinuity({
     overall: "degraded",
@@ -384,10 +401,28 @@ test("computeContinuity increments degraded streak and tracks last live success"
       lastLiveSuccessAt: "2026-07-26T10:00:00.000Z",
       firstDegradedAt: "2026-07-26T15:00:00.000Z",
     },
+    previousRanAt: "2026-07-26T16:00:00.000Z",
   });
   assert.equal(second.degradedStreak, 3);
   assert.equal(second.lastLiveSuccessAt, "2026-07-26T10:00:00.000Z");
   assert.equal(second.firstDegradedAt, "2026-07-26T15:00:00.000Z");
+  assert.equal(second.cadenceGapHours, 1);
+
+  const sameHourRerun = computeContinuity({
+    overall: "degraded",
+    sourceMode: "fixtures-fallback",
+    ranAt: "2026-07-26T21:10:00.000Z",
+    previousAdmin: {
+      overall: "degraded",
+      degradedStreak: 11,
+      firstDegradedAt: "2026-07-26T12:04:02.442Z",
+    },
+    previousRanAt: "2026-07-26T21:04:02.442Z",
+    previousSourceMode: "fixtures-fallback",
+  });
+  assert.equal(sameHourRerun.degradedStreak, 11);
+  assert.equal(sameHourRerun.firstDegradedAt, "2026-07-26T12:04:02.442Z");
+  assert.ok(sameHourRerun.cadenceGapHours < 0.75);
 
   const recovered = computeContinuity({
     overall: "healthy",
@@ -414,6 +449,7 @@ test("buildAdminReport escalates prolonged degraded outages", () => {
     lastLiveSuccessAt: "2026-07-26T10:00:00.000Z",
     firstDegradedAt: "2026-07-26T14:00:00.000Z",
     ranAt: "2026-07-26T17:00:00.000Z",
+    cadenceGapHours: 1,
   });
   assert.equal(report.overall, "degraded");
   assert.equal(report.degradedStreak, PROLONGED_DEGRADED_THRESHOLD);
@@ -421,7 +457,11 @@ test("buildAdminReport escalates prolonged degraded outages", () => {
   assert.equal(report.firstDegradedAt, "2026-07-26T14:00:00.000Z");
   assert.equal(report.ops.outageStartedAt, "2026-07-26T14:00:00.000Z");
   assert.equal(report.ops.outageAgeHours, 3);
+  assert.equal(report.ops.cadenceGapHours, 1);
+  assert.equal(report.ops.extendedOutage, false);
   assert.ok(report.alerts.some((a) => a.code === "PROLONGED_DEGRADED"));
+  assert.ok(!report.alerts.some((a) => a.code === "EXTENDED_OUTAGE"));
+  assert.ok(!report.alerts.some((a) => a.code === "MISSED_HOURLY_CADENCE"));
   assert.match(
     report.alerts.find((a) => a.code === "PROLONGED_DEGRADED").message,
     /~3h since/
@@ -430,6 +470,29 @@ test("buildAdminReport escalates prolonged degraded outages", () => {
   assert.equal(report.ops.blockedOn, "cloud-egress-allowlist");
   assert.match(report.actionRequired, /^P1:/);
   assert.match(report.actionRequired, /consecutive run/);
+});
+
+test("buildAdminReport escalates extended outages to P0 and flags missed cadence", () => {
+  const report = buildAdminReport({
+    sourceMode: "fixtures-fallback",
+    liveError: "USAspending network/egress failure: fetch failed",
+    queryReports: [],
+    summary: { added: 0 },
+    degradedStreak: EXTENDED_OUTAGE_STREAK_THRESHOLD,
+    firstDegradedAt: "2026-07-26T08:00:00.000Z",
+    ranAt: "2026-07-26T20:00:00.000Z",
+    cadenceGapHours: 4,
+  });
+  assert.equal(report.ops.outageAgeHours, EXTENDED_OUTAGE_HOURS_THRESHOLD);
+  assert.equal(report.ops.extendedOutage, true);
+  assert.equal(report.ops.priority, "P0");
+  assert.equal(report.ops.cadenceGapHours, 4);
+  assert.ok(report.alerts.some((a) => a.code === "EXTENDED_OUTAGE"));
+  assert.ok(report.alerts.some((a) => a.code === "MISSED_HOURLY_CADENCE"));
+  assert.match(report.actionRequired, /^P0:/);
+  assert.ok(
+    report.ops.nextChecks.some((c) => /automation cron/i.test(c))
+  );
 });
 
 test("fixtures-fallback with no delta only refreshes last-run heartbeat", async () => {

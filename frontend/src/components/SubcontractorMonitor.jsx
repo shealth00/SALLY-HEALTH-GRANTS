@@ -164,6 +164,12 @@ function SubcontractorMonitor() {
               {status.admin.ops.blockedOn
                 ? ` · blocked on: ${status.admin.ops.blockedOn}`
                 : ""}
+              {status.admin.ops.extendedOutage
+                ? " · extended outage"
+                : ""}
+              {status.admin.ops.cadenceGapHours != null
+                ? ` · cadence gap: ~${status.admin.ops.cadenceGapHours}h`
+                : ""}
               {status.admin.ops.acceptOpportunityDeltas === false
                 ? " · do not act on fixture opportunity deltas"
                 : ""}
