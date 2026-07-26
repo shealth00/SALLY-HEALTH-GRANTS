@@ -62,7 +62,17 @@ export function computeContinuity({
     lastLiveSuccessAt = previousRanAt;
   }
 
-  return { degradedStreak, lastLiveSuccessAt };
+  let firstDegradedAt = null;
+  if (overall === "degraded") {
+    // Prefer prior marker; for legacy degraded files without it, approximate
+    // from the previous run timestamp, else stamp this run as the start.
+    firstDegradedAt =
+      previousAdmin?.firstDegradedAt ||
+      (priorStreak > 0 ? previousRanAt : null) ||
+      ranAt;
+  }
+
+  return { degradedStreak, lastLiveSuccessAt, firstDegradedAt };
 }
 
 /**
@@ -74,6 +84,8 @@ export function computeContinuity({
  * @param {boolean} [input.preservedLiveSnapshot]
  * @param {number} [input.degradedStreak]
  * @param {string|null} [input.lastLiveSuccessAt]
+ * @param {string|null} [input.firstDegradedAt]
+ * @param {string|null} [input.ranAt]
  * @param {number} [input.prolongedDegradedThreshold]
  */
 export function buildAdminReport({
@@ -84,10 +96,18 @@ export function buildAdminReport({
   preservedLiveSnapshot = false,
   degradedStreak = 0,
   lastLiveSuccessAt = null,
+  firstDegradedAt = null,
+  ranAt = null,
   prolongedDegradedThreshold = PROLONGED_DEGRADED_THRESHOLD,
 }) {
   const alerts = [];
   const failedQueries = queryReports.filter((q) => q.error);
+  const outageAgeHours = (() => {
+    if (!firstDegradedAt || !ranAt) return null;
+    const ms = Date.parse(ranAt) - Date.parse(firstDegradedAt);
+    if (!Number.isFinite(ms) || ms < 0) return null;
+    return Math.round(ms / (60 * 60 * 1000));
+  })();
 
   if (sourceMode === "fixtures-fallback") {
     const egressBlocked = isEgressLikeFailure(liveError);
@@ -141,10 +161,16 @@ export function buildAdminReport({
     degradedStreak >= prolongedDegradedThreshold &&
     sourceMode === "fixtures-fallback"
   ) {
+    const agePart =
+      outageAgeHours != null
+        ? ` (~${outageAgeHours}h since ${firstDegradedAt})`
+        : firstDegradedAt
+          ? ` (since ${firstDegradedAt})`
+          : "";
     alerts.push({
       severity: "critical",
       code: "PROLONGED_DEGRADED",
-      message: `Live USAspending monitoring has been degraded for ${degradedStreak} consecutive run(s). Production opportunity alerts remain suppressed until live reachability is restored.`,
+      message: `Live USAspending monitoring has been degraded for ${degradedStreak} consecutive run(s)${agePart}. Production opportunity alerts remain suppressed until live reachability is restored.`,
     });
   }
 
@@ -202,6 +228,8 @@ export function buildAdminReport({
     acceptOpportunityDeltas:
       !productionAlertsSuppressed &&
       (sourceMode === "live" || sourceMode === "live-partial"),
+    outageStartedAt: firstDegradedAt,
+    outageAgeHours,
     nextChecks: [
       ...(egressBlocked
         ? [
@@ -233,6 +261,7 @@ export function buildAdminReport({
     requiredEgressDomains: [...REQUIRED_EGRESS_DOMAINS],
     degradedStreak,
     lastLiveSuccessAt,
+    firstDegradedAt,
     ops,
   };
 }

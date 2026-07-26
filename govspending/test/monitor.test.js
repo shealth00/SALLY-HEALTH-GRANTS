@@ -333,33 +333,46 @@ test("computeContinuity increments degraded streak and tracks last live success"
   });
   assert.equal(first.degradedStreak, 1);
   assert.equal(first.lastLiveSuccessAt, null);
+  assert.equal(first.firstDegradedAt, "2026-07-26T16:00:00.000Z");
 
   const legacy = computeContinuity({
     overall: "degraded",
     sourceMode: "fixtures-fallback",
     ranAt: "2026-07-26T16:30:00.000Z",
     previousAdmin: { overall: "degraded" },
+    previousRanAt: "2026-07-26T15:30:00.000Z",
     previousSourceMode: "fixtures-fallback",
   });
   assert.equal(legacy.degradedStreak, PROLONGED_DEGRADED_THRESHOLD + 1);
+  assert.equal(legacy.firstDegradedAt, "2026-07-26T15:30:00.000Z");
 
   const second = computeContinuity({
     overall: "degraded",
     sourceMode: "fixtures-fallback",
     ranAt: "2026-07-26T17:00:00.000Z",
-    previousAdmin: { degradedStreak: 2, lastLiveSuccessAt: "2026-07-26T10:00:00.000Z" },
+    previousAdmin: {
+      degradedStreak: 2,
+      lastLiveSuccessAt: "2026-07-26T10:00:00.000Z",
+      firstDegradedAt: "2026-07-26T15:00:00.000Z",
+    },
   });
   assert.equal(second.degradedStreak, 3);
   assert.equal(second.lastLiveSuccessAt, "2026-07-26T10:00:00.000Z");
+  assert.equal(second.firstDegradedAt, "2026-07-26T15:00:00.000Z");
 
   const recovered = computeContinuity({
     overall: "healthy",
     sourceMode: "live",
     ranAt: "2026-07-26T18:00:00.000Z",
-    previousAdmin: { degradedStreak: 5, lastLiveSuccessAt: "2026-07-26T10:00:00.000Z" },
+    previousAdmin: {
+      degradedStreak: 5,
+      lastLiveSuccessAt: "2026-07-26T10:00:00.000Z",
+      firstDegradedAt: "2026-07-26T15:00:00.000Z",
+    },
   });
   assert.equal(recovered.degradedStreak, 0);
   assert.equal(recovered.lastLiveSuccessAt, "2026-07-26T18:00:00.000Z");
+  assert.equal(recovered.firstDegradedAt, null);
 });
 
 test("buildAdminReport escalates prolonged degraded outages", () => {
@@ -370,11 +383,20 @@ test("buildAdminReport escalates prolonged degraded outages", () => {
     summary: { added: 0 },
     degradedStreak: PROLONGED_DEGRADED_THRESHOLD,
     lastLiveSuccessAt: "2026-07-26T10:00:00.000Z",
+    firstDegradedAt: "2026-07-26T14:00:00.000Z",
+    ranAt: "2026-07-26T17:00:00.000Z",
   });
   assert.equal(report.overall, "degraded");
   assert.equal(report.degradedStreak, PROLONGED_DEGRADED_THRESHOLD);
   assert.equal(report.lastLiveSuccessAt, "2026-07-26T10:00:00.000Z");
+  assert.equal(report.firstDegradedAt, "2026-07-26T14:00:00.000Z");
+  assert.equal(report.ops.outageStartedAt, "2026-07-26T14:00:00.000Z");
+  assert.equal(report.ops.outageAgeHours, 3);
   assert.ok(report.alerts.some((a) => a.code === "PROLONGED_DEGRADED"));
+  assert.match(
+    report.alerts.find((a) => a.code === "PROLONGED_DEGRADED").message,
+    /~3h since/
+  );
   assert.equal(report.ops.priority, "P1");
   assert.equal(report.ops.blockedOn, "cloud-egress-allowlist");
   assert.match(report.actionRequired, /^P1:/);
@@ -412,6 +434,7 @@ test("fixtures-fallback with no delta only refreshes last-run heartbeat", async 
     assert.equal(result.lastRun.hasChanges, false);
     assert.equal(result.lastRun.admin.overall, "degraded");
     assert.ok(result.lastRun.admin.alerts.some((a) => a.code === "EGRESS_BLOCKED"));
+    assert.equal(result.lastRun.admin.firstDegradedAt, "2026-07-26T16:00:00.000Z");
 
     const after = await readFile(opportunitiesPath, "utf8");
     assert.equal(after, before);
@@ -420,6 +443,7 @@ test("fixtures-fallback with no delta only refreshes last-run heartbeat", async 
       await readFile(path.join(tempDir, "data", "last-run.json"), "utf8")
     );
     assert.equal(lastRun.ranAt, "2026-07-26T16:00:00.000Z");
+    assert.equal(lastRun.admin.firstDegradedAt, "2026-07-26T16:00:00.000Z");
   } finally {
     await rm(tempDir, { recursive: true, force: true });
   }

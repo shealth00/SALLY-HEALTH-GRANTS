@@ -56,7 +56,7 @@ Key alert codes:
 | `PARTIAL_LIVE_QUERY_FAILURE` | One or more query lanes failed; others succeeded |
 | `PRESERVED_LIVE_SNAPSHOT` | Prior live snapshot kept instead of writing fixtures |
 
-Admin also exposes booleans `egressBlocked` and `productionAlertsSuppressed`, plus `requiredEgressDomains`, `degradedStreak`, `lastLiveSuccessAt`, and a structured `ops` checklist (`priority`, `blockedOn`, `nextChecks`, `acceptOpportunityDeltas`) for machine-readable oversight. Prolonged egress outages escalate `actionRequired` to **P1**.
+Admin also exposes booleans `egressBlocked` and `productionAlertsSuppressed`, plus `requiredEgressDomains`, `degradedStreak`, `firstDegradedAt`, `lastLiveSuccessAt`, and a structured `ops` checklist (`priority`, `blockedOn`, `nextChecks`, `acceptOpportunityDeltas`, `outageStartedAt`, `outageAgeHours`) for machine-readable oversight. Prolonged egress outages escalate `actionRequired` to **P1**.
 
 Safeguards:
 

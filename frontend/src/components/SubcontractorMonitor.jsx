@@ -121,12 +121,27 @@ function SubcontractorMonitor() {
           {status.admin.actionRequired && (
             <p className="mt-1">{status.admin.actionRequired}</p>
           )}
-          {(status.admin.degradedStreak > 0 || status.admin.lastLiveSuccessAt) && (
+          {(status.admin.degradedStreak > 0 ||
+            status.admin.firstDegradedAt ||
+            status.admin.lastLiveSuccessAt) && (
             <p className="mt-1">
               {status.admin.degradedStreak > 0
                 ? `Degraded streak: ${status.admin.degradedStreak}`
                 : null}
-              {status.admin.degradedStreak > 0 && status.admin.lastLiveSuccessAt
+              {status.admin.degradedStreak > 0 && status.admin.firstDegradedAt
+                ? " · "
+                : ""}
+              {status.admin.firstDegradedAt
+                ? `Outage since: ${new Date(
+                    status.admin.firstDegradedAt
+                  ).toLocaleString()}${
+                    status.admin.ops?.outageAgeHours != null
+                      ? ` (~${status.admin.ops.outageAgeHours}h)`
+                      : ""
+                  }`
+                : null}
+              {(status.admin.degradedStreak > 0 || status.admin.firstDegradedAt) &&
+              status.admin.lastLiveSuccessAt
                 ? " · "
                 : ""}
               {status.admin.lastLiveSuccessAt

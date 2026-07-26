@@ -149,6 +149,8 @@ export async function runMonitor(options = {}) {
         preservedLiveSnapshot,
         degradedStreak: continuity.degradedStreak,
         lastLiveSuccessAt: continuity.lastLiveSuccessAt,
+        firstDegradedAt: continuity.firstDegradedAt,
+        ranAt: generatedAt,
       });
 
       const lastRun = {
@@ -253,6 +255,8 @@ export async function runMonitor(options = {}) {
     preservedLiveSnapshot,
     degradedStreak: continuity.degradedStreak,
     lastLiveSuccessAt: continuity.lastLiveSuccessAt,
+    firstDegradedAt: continuity.firstDegradedAt,
+    ranAt: generatedAt,
   });
 
   const lastRun = {

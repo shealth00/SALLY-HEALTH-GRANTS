@@ -67,6 +67,13 @@ async function main() {
     if (admin.degradedStreak != null) {
       console.log(`Degraded streak: ${admin.degradedStreak}`);
     }
+    if (admin.firstDegradedAt) {
+      const age =
+        admin.ops?.outageAgeHours != null
+          ? ` (~${admin.ops.outageAgeHours}h)`
+          : "";
+      console.log(`First degraded at: ${admin.firstDegradedAt}${age}`);
+    }
     if (admin.lastLiveSuccessAt) {
       console.log(`Last live success: ${admin.lastLiveSuccessAt}`);
     }
