@@ -1,5 +1,5 @@
 {
-  "ranAt": "2026-07-26T21:03:18.251Z",
+  "ranAt": "2026-07-26T21:04:02.442Z",
   "sourceMode": "fixtures-fallback",
   "liveError": "health-subawards: USAspending network/egress failure: fetch failed; health-naics-primes: USAspending network/egress failure: fetch failed; illinois-health-grants: USAspending network/egress failure: fetch failed",
   "window": {
@@ -20,7 +20,7 @@
   "preservedLiveSnapshot": false,
   "admin": {
     "overall": "degraded",
-    "actionRequired": "P1: Live USAspending monitoring degraded for 9 consecutive run(s). Add api.usaspending.gov and www.usaspending.gov to the Cursor cloud egress allowlist (environment/team network policy), then re-run node govspending/monitor.js --admin and confirm sourceMode is live or live-partial.",
+    "actionRequired": "P1: Live USAspending monitoring degraded for 10 consecutive run(s). Add api.usaspending.gov and www.usaspending.gov to the Cursor cloud egress allowlist (environment/team network policy), then re-run node govspending/monitor.js --admin and confirm sourceMode is live or live-partial.",
     "alerts": [
       {
         "severity": "critical",
@@ -35,7 +35,7 @@
       {
         "severity": "critical",
         "code": "PROLONGED_DEGRADED",
-        "message": "Live USAspending monitoring has been degraded for 9 consecutive run(s) (~0h since 2026-07-26T21:02:45.721Z). Production opportunity alerts remain suppressed until live reachability is restored."
+        "message": "Live USAspending monitoring has been degraded for 10 consecutive run(s) (~9h since 2026-07-26T12:04:02.442Z). Production opportunity alerts remain suppressed until live reachability is restored."
       }
     ],
     "liveQuerySuccessCount": 0,
@@ -46,9 +46,9 @@
       "api.usaspending.gov",
       "www.usaspending.gov"
     ],
-    "degradedStreak": 9,
+    "degradedStreak": 10,
     "lastLiveSuccessAt": null,
-    "firstDegradedAt": "2026-07-26T21:02:45.721Z",
+    "firstDegradedAt": "2026-07-26T12:04:02.442Z",
     "ops": {
       "priority": "P1",
       "blockedOn": "cloud-egress-allowlist",
@@ -58,8 +58,8 @@
       ],
       "suppressProductionAlerts": true,
       "acceptOpportunityDeltas": false,
-      "outageStartedAt": "2026-07-26T21:02:45.721Z",
-      "outageAgeHours": 0,
+      "outageStartedAt": "2026-07-26T12:04:02.442Z",
+      "outageAgeHours": 9,
       "nextChecks": [
         "Add api.usaspending.gov and www.usaspending.gov to Cursor cloud agent network allowlist",
         "Re-run: node govspending/monitor.js --admin",
