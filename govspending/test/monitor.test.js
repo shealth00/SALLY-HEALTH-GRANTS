@@ -272,9 +272,31 @@ test("buildAdminReport marks fixture fallback as degraded", () => {
   });
   assert.equal(report.overall, "degraded");
   assert.equal(report.egressBlocked, true);
+  assert.equal(report.productionAlertsSuppressed, true);
   assert.ok(report.alerts.some((a) => a.code === "EGRESS_BLOCKED"));
   assert.ok(report.alerts.some((a) => a.code === "PRODUCTION_ALERTS_SUPPRESSED"));
   assert.match(report.actionRequired, /api\.usaspending\.gov/);
+});
+
+test("buildAdminReport suppresses production alerts for non-egress live failures", () => {
+  const report = buildAdminReport({
+    sourceMode: "fixtures-fallback",
+    liveError: "USAspending API 503: service unavailable",
+    queryReports: [
+      {
+        queryId: "health-subawards",
+        mode: "live-failed",
+        error: "USAspending API 503: service unavailable",
+      },
+    ],
+    summary: { added: 2 },
+  });
+  assert.equal(report.overall, "degraded");
+  assert.equal(report.egressBlocked, false);
+  assert.equal(report.productionAlertsSuppressed, true);
+  assert.ok(report.alerts.some((a) => a.code === "LIVE_API_UNAVAILABLE"));
+  assert.ok(report.alerts.some((a) => a.code === "PRODUCTION_ALERTS_SUPPRESSED"));
+  assert.ok(!report.alerts.some((a) => a.code === "NEW_OPPORTUNITIES"));
 });
 
 test("classifyUsaSpendingFetchError labels timeouts and egress failures", () => {

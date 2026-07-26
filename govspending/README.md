@@ -51,7 +51,9 @@ Key alert codes:
 |------|---------|
 | `EGRESS_BLOCKED` | Transport/network failure reaching USAspending (allowlist/firewall) |
 | `LIVE_API_UNAVAILABLE` | Live API failed for a non-egress reason |
-| `PRODUCTION_ALERTS_SUPPRESSED` | Fixture fallback must not drive opportunity actions |
+| `PRODUCTION_ALERTS_SUPPRESSED` | Fixture fallback must not drive opportunity actions (always set when `sourceMode` is `fixtures-fallback`) |
+
+Admin also exposes booleans `egressBlocked` and `productionAlertsSuppressed` for machine-readable oversight.
 | `PARTIAL_LIVE_QUERY_FAILURE` | One or more query lanes failed; others succeeded |
 | `PRESERVED_LIVE_SNAPSHOT` | Prior live snapshot kept instead of writing fixtures |
 

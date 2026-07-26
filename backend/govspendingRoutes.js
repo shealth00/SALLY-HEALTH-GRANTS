@@ -43,15 +43,35 @@ export function createGovspendingRouter() {
           lastRun.sourceMode === "fixtures-fallback"
             ? "Restore egress to api.usaspending.gov, then re-run the monitor in live mode."
             : null,
-        alerts: lastRun.liveError
-          ? [
-              {
-                severity: "critical",
-                code: "LIVE_API_UNAVAILABLE",
-                message: lastRun.liveError,
-              },
-            ]
-          : [],
+        productionAlertsSuppressed: lastRun.sourceMode === "fixtures-fallback",
+        egressBlocked: /network\/egress|fetch failed|ECONNRESET|ENOTFOUND/i.test(
+          lastRun.liveError || ""
+        ),
+        alerts: [
+          ...(lastRun.liveError
+            ? [
+                {
+                  severity: "critical",
+                  code: /network\/egress|fetch failed|ECONNRESET|ENOTFOUND/i.test(
+                    lastRun.liveError
+                  )
+                    ? "EGRESS_BLOCKED"
+                    : "LIVE_API_UNAVAILABLE",
+                  message: lastRun.liveError,
+                },
+              ]
+            : []),
+          ...(lastRun.sourceMode === "fixtures-fallback"
+            ? [
+                {
+                  severity: "critical",
+                  code: "PRODUCTION_ALERTS_SUPPRESSED",
+                  message:
+                    "Fixture-fallback results are not production opportunity alerts. Wait for live or live-partial sourceMode.",
+                },
+              ]
+            : []),
+        ],
       },
     });
   });

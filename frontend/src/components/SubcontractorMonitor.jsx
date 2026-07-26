@@ -114,13 +114,16 @@ function SubcontractorMonitor() {
         >
           <p className="font-semibold">
             Admin status: {status.admin.overall}
+            {status.admin.productionAlertsSuppressed
+              ? " · production alerts suppressed"
+              : ""}
           </p>
           {status.admin.actionRequired && (
             <p className="mt-1">{status.admin.actionRequired}</p>
           )}
-          {(status.admin.alerts || []).slice(0, 3).map((alert) => (
-            <p key={alert.code} className="mt-1">
-              [{alert.severity}] {alert.message}
+          {(status.admin.alerts || []).slice(0, 4).map((alert, index) => (
+            <p key={`${alert.code}-${index}`} className="mt-1">
+              [{alert.severity}] {alert.code}: {alert.message}
             </p>
           ))}
         </div>
@@ -128,6 +131,16 @@ function SubcontractorMonitor() {
 
       {snapshot && (
         <>
+          {(status?.admin?.productionAlertsSuppressed ||
+            snapshot.source?.mode === "fixtures-fallback" ||
+            snapshot.source?.mode === "fixtures") && (
+            <p className="mb-4 rounded border border-gray-300 bg-gray-50 p-3 text-sm text-gray-700">
+              Showing sample/fixture opportunities for workflow continuity. Do not
+              treat these rows as live USAspending alerts until source mode is{" "}
+              <code>live</code> or <code>live-partial</code>.
+            </p>
+          )}
+
           <div className="mb-4 grid gap-3 sm:grid-cols-4">
             <div className="rounded bg-green-50 p-3">
               <p className="text-xs uppercase text-green-700">Total</p>
@@ -143,15 +156,19 @@ function SubcontractorMonitor() {
             </div>
             <div className="rounded bg-green-50 p-3">
               <p className="text-xs uppercase text-green-700">New since last run</p>
-              <p className="text-xl font-semibold">{snapshot.summary.added}</p>
+              <p className="text-xl font-semibold">
+                {status?.admin?.productionAlertsSuppressed
+                  ? "—"
+                  : status?.summary?.added ?? snapshot.summary.added}
+              </p>
             </div>
           </div>
 
           <p className="mb-3 text-xs text-gray-500">
-            Source mode: {snapshot.source?.mode || "unknown"}
+            Source mode: {status?.sourceMode || snapshot.source?.mode || "unknown"}
             {status?.ranAt ? ` · Last run: ${new Date(status.ranAt).toLocaleString()}` : ""}
-            {snapshot.source?.window
-              ? ` · Window: ${snapshot.source.window.startDate} → ${snapshot.source.window.endDate}`
+            {(status?.window || snapshot.source?.window)
+              ? ` · Window: ${(status?.window || snapshot.source.window).startDate} → ${(status?.window || snapshot.source.window).endDate}`
               : ""}
           </p>
 

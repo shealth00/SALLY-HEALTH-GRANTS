@@ -39,14 +39,14 @@ export function buildAdminReport({
         liveError ||
         "USAspending live API unreachable; using fixture fallback. Do not treat results as production alerts.",
     });
-    if (egressBlocked) {
-      alerts.push({
-        severity: "critical",
-        code: "PRODUCTION_ALERTS_SUPPRESSED",
-        message:
-          "Fixture-fallback results are not production opportunity alerts. Wait for live or live-partial sourceMode.",
-      });
-    }
+    // Always suppress production opportunity actions on fixture fallback,
+    // whether the live failure was egress or another API/runtime issue.
+    alerts.push({
+      severity: "critical",
+      code: "PRODUCTION_ALERTS_SUPPRESSED",
+      message:
+        "Fixture-fallback results are not production opportunity alerts. Wait for live or live-partial sourceMode.",
+    });
   }
 
   if (sourceMode === "live-partial") {
@@ -100,6 +100,10 @@ export function buildAdminReport({
         ? "Review failed query lanes and confirm opportunity deltas before acting."
         : null;
 
+  const productionAlertsSuppressed =
+    sourceMode === "fixtures-fallback" ||
+    alerts.some((a) => a.code === "PRODUCTION_ALERTS_SUPPRESSED");
+
   return {
     overall,
     actionRequired,
@@ -107,5 +111,6 @@ export function buildAdminReport({
     liveQuerySuccessCount: queryReports.filter((q) => q.mode === "live").length,
     liveQueryFailureCount: failedQueries.length,
     egressBlocked: isEgressLikeFailure(liveError),
+    productionAlertsSuppressed,
   };
 }
