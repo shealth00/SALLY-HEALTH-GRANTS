@@ -330,6 +330,15 @@ test("computeContinuity increments degraded streak and tracks last live success"
   assert.equal(first.degradedStreak, 1);
   assert.equal(first.lastLiveSuccessAt, null);
 
+  const legacy = computeContinuity({
+    overall: "degraded",
+    sourceMode: "fixtures-fallback",
+    ranAt: "2026-07-26T16:30:00.000Z",
+    previousAdmin: { overall: "degraded" },
+    previousSourceMode: "fixtures-fallback",
+  });
+  assert.equal(legacy.degradedStreak, PROLONGED_DEGRADED_THRESHOLD + 1);
+
   const second = computeContinuity({
     overall: "degraded",
     sourceMode: "fixtures-fallback",

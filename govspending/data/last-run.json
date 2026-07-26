@@ -1,10 +1,10 @@
 {
-  "ranAt": "2026-07-24T21:16:16.995Z",
+  "ranAt": "2026-07-26T19:04:41.045Z",
   "sourceMode": "fixtures-fallback",
   "liveError": "health-subawards: USAspending network/egress failure: fetch failed; health-naics-primes: USAspending network/egress failure: fetch failed; illinois-health-grants: USAspending network/egress failure: fetch failed",
   "window": {
-    "startDate": "2026-04-25",
-    "endDate": "2026-07-24"
+    "startDate": "2026-04-27",
+    "endDate": "2026-07-26"
   },
   "summary": {
     "total": 4,
@@ -31,6 +31,11 @@
         "severity": "critical",
         "code": "PRODUCTION_ALERTS_SUPPRESSED",
         "message": "Fixture-fallback results are not production opportunity alerts. Wait for live or live-partial sourceMode."
+      },
+      {
+        "severity": "critical",
+        "code": "PROLONGED_DEGRADED",
+        "message": "Live USAspending monitoring has been degraded for 4 consecutive run(s). Production opportunity alerts remain suppressed until live reachability is restored."
       }
     ],
     "liveQuerySuccessCount": 0,
@@ -40,6 +45,8 @@
     "requiredEgressDomains": [
       "api.usaspending.gov",
       "www.usaspending.gov"
-    ]
+    ],
+    "degradedStreak": 4,
+    "lastLiveSuccessAt": null
   }
 }

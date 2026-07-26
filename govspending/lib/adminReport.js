@@ -38,7 +38,17 @@ export function computeContinuity({
   previousRanAt = null,
   previousSourceMode = null,
 }) {
-  const priorStreak = Number(previousAdmin?.degradedStreak) || 0;
+  let priorStreak = Number(previousAdmin?.degradedStreak);
+  // Legacy last-run files predate degradedStreak; if they were already
+  // degraded/fallback, treat that as a prolonged outage so admin escalates.
+  if (!Number.isFinite(priorStreak) || priorStreak < 0) {
+    priorStreak =
+      previousAdmin?.overall === "degraded" ||
+      previousSourceMode === "fixtures-fallback"
+        ? PROLONGED_DEGRADED_THRESHOLD
+        : 0;
+  }
+
   const degradedStreak = overall === "degraded" ? priorStreak + 1 : 0;
 
   let lastLiveSuccessAt = previousAdmin?.lastLiveSuccessAt || null;
