@@ -1,7 +1,7 @@
 {
-  "ranAt": "2026-07-26T14:23:36.862Z",
-  "sourceMode": "fixtures",
-  "liveError": null,
+  "ranAt": "2026-07-26T15:04:13.670Z",
+  "sourceMode": "fixtures-fallback",
+  "liveError": "health-subawards: fetch failed; health-naics-primes: fetch failed; illinois-health-grants: fetch failed",
   "window": {
     "startDate": "2026-04-27",
     "endDate": "2026-07-26"
@@ -16,5 +16,19 @@
   },
   "newOpportunityIds": [],
   "removedOpportunityIds": [],
-  "hasChanges": false
+  "hasChanges": false,
+  "preservedLiveSnapshot": false,
+  "admin": {
+    "overall": "degraded",
+    "actionRequired": "Restore egress to api.usaspending.gov / www.usaspending.gov, then re-run the monitor in live mode.",
+    "alerts": [
+      {
+        "severity": "critical",
+        "code": "LIVE_API_UNAVAILABLE",
+        "message": "health-subawards: fetch failed; health-naics-primes: fetch failed; illinois-health-grants: fetch failed"
+      }
+    ],
+    "liveQuerySuccessCount": 0,
+    "liveQueryFailureCount": 3
+  }
 }

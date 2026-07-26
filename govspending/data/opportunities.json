@@ -1,15 +1,15 @@
 {
-  "generatedAt": "2026-07-26T14:23:36.862Z",
+  "generatedAt": "2026-07-26T15:04:13.670Z",
   "organization": "Sally Health",
   "source": {
     "name": "USAspending.gov",
     "note": "Official federal spending portal is USAspending.gov (govspending.gov does not resolve).",
-    "mode": "fixtures",
+    "mode": "fixtures-fallback",
     "window": {
       "startDate": "2026-04-27",
       "endDate": "2026-07-26"
     },
-    "liveError": null
+    "liveError": "health-subawards: fetch failed; health-naics-primes: fetch failed; illinois-health-grants: fetch failed"
   },
   "summary": {
     "total": 4,
@@ -24,19 +24,22 @@
       "queryId": "health-subawards",
       "label": "Health subawards (keywords)",
       "count": 2,
-      "mode": "fixtures"
+      "mode": "fixtures-fallback",
+      "liveError": "fetch failed"
     },
     {
       "queryId": "health-naics-primes",
       "label": "Prime awards in health NAICS",
       "count": 1,
-      "mode": "fixtures"
+      "mode": "fixtures-fallback",
+      "liveError": "fetch failed"
     },
     {
       "queryId": "illinois-health-grants",
       "label": "Illinois health assistance awards",
       "count": 1,
-      "mode": "fixtures"
+      "mode": "fixtures-fallback",
+      "liveError": "fetch failed"
     }
   ],
   "opportunities": [
