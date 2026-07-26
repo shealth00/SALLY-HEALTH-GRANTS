@@ -58,7 +58,7 @@ Key alert codes:
 | `PARTIAL_LIVE_QUERY_FAILURE` | One or more query lanes failed; others succeeded |
 | `PRESERVED_LIVE_SNAPSHOT` | Prior live snapshot kept instead of writing fixtures |
 
-Admin also exposes booleans `egressBlocked` and `productionAlertsSuppressed`, plus `requiredEgressDomains`, `degradedStreak`, `firstDegradedAt`, `lastLiveSuccessAt`, and a structured `ops` checklist (`priority`, `blockedOn`, `nextChecks`, `acceptOpportunityDeltas`, `outageStartedAt`, `outageAgeHours`, `cadenceGapHours`, `extendedOutage`) for machine-readable oversight. Prolonged egress outages escalate `actionRequired` to **P1**; extended outages (≥12h or streak ≥12) escalate to **P0**. Outage-start markers stay stable across missed hourly runs (cadence-aware continuity).
+Admin also exposes booleans `egressBlocked` and `productionAlertsSuppressed`, plus `requiredEgressDomains`, `degradedStreak`, `firstDegradedAt`, `lastLiveSuccessAt`, and a structured `ops` checklist (`priority`, `blockedOn`, `nextChecks`, `acceptOpportunityDeltas`, `outageStartedAt`, `outageAgeHours`, `cadenceGapHours`, `extendedOutage`) for machine-readable oversight. Prolonged egress outages escalate `actionRequired` to **P1**; extended outages (≥12h or streak ≥12) escalate to **P0**. Outage-start markers stay stable across missed hourly runs (cadence-aware continuity). Same-hour re-runs (<45m) do not inflate `degradedStreak`.
 
 Safeguards:
 
