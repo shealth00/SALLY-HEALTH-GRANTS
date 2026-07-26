@@ -3,6 +3,11 @@
 
 ## Features
 
+### 0. USAspending Subcontractor Workflow Monitor
+- Hourly monitor for Sally Health–relevant federal **subawards / subcontractor** opportunities from [USAspending.gov](https://www.usaspending.gov/).
+- See [`govspending/README.md`](./govspending/README.md) for CLI, API, and config details.
+- Run: `npm run govspending:monitor` (live API with fixture fallback) or `npm run govspending:test`.
+
 ### 1. User Interface Development
 - Provides an intuitive and user-friendly interface for seamless access to grant writing resources.  
 - Designed with accessibility and ease of use in mind.
