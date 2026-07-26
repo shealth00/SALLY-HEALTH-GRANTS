@@ -5,6 +5,7 @@ import cors from 'cors';
 import multer from 'multer';
 
 import fetch from 'node-fetch';
+import { createGovspendingRouter } from './govspendingRoutes.js';
 
 const app = express();
 const port = process.env.PORT || 5001;
@@ -12,7 +13,9 @@ const port = process.env.PORT || 5001;
 app.use(express.json());
 app.use(cors());
 
-dotenv.config() 
+dotenv.config()
+
+app.use('/api/govspending', createGovspendingRouter()); 
 
 // Configure Multer for in-memory storage
 const storage = multer.memoryStorage();
