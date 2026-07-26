@@ -7,6 +7,7 @@ import {
 } from "./usaspendingClient.js";
 import { normalizeOpportunity, dedupeOpportunities } from "./normalize.js";
 import { computeWindow, diffOpportunities } from "./diff.js";
+import { buildAdminReport } from "./adminReport.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const GOVSPENDING_ROOT = path.resolve(__dirname, "..");
@@ -30,11 +31,11 @@ export async function runMonitor(options = {}) {
   const config = JSON.parse(await readFile(configPath, "utf8"));
   const window = computeWindow(options.now || new Date(), config.lookbackDays);
 
-  let previous = { opportunities: [], generatedAt: null };
+  let previous = { opportunities: [], generatedAt: null, source: {} };
   try {
     previous = JSON.parse(await readFile(opportunitiesPath, "utf8"));
   } catch {
-    previous = { opportunities: [], generatedAt: null };
+    previous = { opportunities: [], generatedAt: null, source: {} };
   }
 
   const client = new UsaSpendingClient({
@@ -47,10 +48,15 @@ export async function runMonitor(options = {}) {
   const collected = [];
   let sourceMode = options.useFixtures ? "fixtures" : "live";
   let liveError = null;
+  let preservedLiveSnapshot = false;
 
   if (!options.useFixtures) {
-    try {
-      for (const query of config.queries) {
+    let liveSuccesses = 0;
+    let liveFailures = 0;
+    const liveErrors = [];
+
+    for (const query of config.queries) {
+      try {
         const body = buildSearchRequest(config, query, window);
         const payload = await client.searchSpendingByAward(body);
         const rows = Array.isArray(payload.results) ? payload.results : [];
@@ -60,6 +66,7 @@ export async function runMonitor(options = {}) {
           count: rows.length,
           mode: "live",
         });
+        liveSuccesses += 1;
         for (const row of rows) {
           collected.push(
             normalizeOpportunity(row, {
@@ -70,14 +77,95 @@ export async function runMonitor(options = {}) {
             })
           );
         }
+      } catch (error) {
+        liveFailures += 1;
+        const message = error instanceof Error ? error.message : String(error);
+        liveErrors.push(`${query.id}: ${message}`);
+        queryReports.push({
+          queryId: query.id,
+          label: query.label,
+          count: 0,
+          mode: "live-failed",
+          error: message,
+        });
       }
-    } catch (error) {
-      liveError = error instanceof Error ? error.message : String(error);
+    }
+
+    if (liveSuccesses === 0) {
       sourceMode = "fixtures-fallback";
+      liveError = liveErrors.join("; ") || "USAspending live API unreachable";
+    } else if (liveFailures > 0) {
+      sourceMode = "live-partial";
+      liveError = liveErrors.join("; ");
+    } else {
+      sourceMode = "live";
     }
   }
 
-  if (sourceMode !== "live") {
+  // Keep live failure details for admin even if we later load fixtures.
+  const adminQueryReports = queryReports.map((q) => ({ ...q }));
+
+  if (sourceMode === "fixtures" || sourceMode === "fixtures-fallback") {
+    const previousWasLive =
+      previous?.source?.mode === "live" ||
+      previous?.source?.mode === "live-partial";
+
+    if (sourceMode === "fixtures-fallback" && previousWasLive) {
+      // Admin safeguard: never replace a live snapshot with fixtures.
+      preservedLiveSnapshot = true;
+      const generatedAt = (options.now || new Date()).toISOString();
+      const admin = buildAdminReport({
+        sourceMode,
+        liveError,
+        queryReports: adminQueryReports,
+        summary: previous.summary || {
+          total: (previous.opportunities || []).length,
+          subawards: 0,
+          primeAwards: 0,
+          added: 0,
+          removed: 0,
+          changed: 0,
+        },
+        preservedLiveSnapshot,
+      });
+
+      const lastRun = {
+        ranAt: generatedAt,
+        sourceMode,
+        liveError,
+        window,
+        summary: {
+          total: (previous.opportunities || []).length,
+          subawards: (previous.opportunities || []).filter(
+            (o) => o.kind === "subaward"
+          ).length,
+          primeAwards: (previous.opportunities || []).filter(
+            (o) => o.kind === "prime_award"
+          ).length,
+          added: 0,
+          removed: 0,
+          changed: 0,
+        },
+        newOpportunityIds: [],
+        removedOpportunityIds: [],
+        hasChanges: false,
+        preservedLiveSnapshot: true,
+        admin,
+      };
+
+      if (options.write !== false) {
+        await mkdir(dataDir, { recursive: true });
+        await writeFile(lastRunPath, `${JSON.stringify(lastRun, null, 2)}\n`);
+      }
+
+      return {
+        snapshot: previous,
+        lastRun,
+        diff: { added: [], removed: [], changed: [], hasChanges: false },
+        paths: { opportunitiesPath, lastRunPath },
+      };
+    }
+
     const fixtures = JSON.parse(await readFile(fixturesPath, "utf8"));
     collected.length = 0;
     queryReports.length = 0;
@@ -85,11 +173,13 @@ export async function runMonitor(options = {}) {
     for (const query of config.queries) {
       const payload = fixtures[query.id] || { results: [] };
       const rows = Array.isArray(payload.results) ? payload.results : [];
+      const priorLive = adminQueryReports.find((q) => q.queryId === query.id);
       queryReports.push({
         queryId: query.id,
         label: query.label,
         count: rows.length,
         mode: sourceMode,
+        ...(priorLive?.error ? { liveError: priorLive.error } : {}),
       });
       for (const row of rows) {
         collected.push(
@@ -131,6 +221,15 @@ export async function runMonitor(options = {}) {
     opportunities,
   };
 
+  const admin = buildAdminReport({
+    sourceMode,
+    liveError,
+    queryReports:
+      sourceMode === "fixtures-fallback" ? adminQueryReports : queryReports,
+    summary: snapshot.summary,
+    preservedLiveSnapshot,
+  });
+
   const lastRun = {
     ranAt: generatedAt,
     sourceMode,
@@ -140,6 +239,8 @@ export async function runMonitor(options = {}) {
     newOpportunityIds: diff.added.map((o) => o.opportunityId),
     removedOpportunityIds: diff.removed.map((o) => o.opportunityId),
     hasChanges: diff.hasChanges,
+    preservedLiveSnapshot,
+    admin,
   };
 
   if (options.write !== false) {

@@ -7,6 +7,7 @@
  *   node govspending/monitor.js
  *   node govspending/monitor.js --fixtures
  *   node govspending/monitor.js --dry-run
+ *   node govspending/monitor.js --admin
  */
 
 import { runMonitor } from "./lib/runMonitor.js";
@@ -16,6 +17,7 @@ function parseArgs(argv) {
     useFixtures: argv.includes("--fixtures"),
     dryRun: argv.includes("--dry-run"),
     json: argv.includes("--json"),
+    admin: argv.includes("--admin"),
   };
 }
 
@@ -46,6 +48,24 @@ async function main() {
   console.log(
     `Delta: +${summary.added} / -${summary.removed} / ~${summary.changed}`
   );
+
+  if (result.lastRun.preservedLiveSnapshot) {
+    console.log(
+      "Admin safeguard: preserved previous live opportunities snapshot (fixtures not written)."
+    );
+  }
+
+  if (args.admin || result.lastRun.admin) {
+    const admin = result.lastRun.admin;
+    console.log("\nAdmin oversight");
+    console.log(`Overall: ${admin.overall}`);
+    if (admin.actionRequired) {
+      console.log(`Action required: ${admin.actionRequired}`);
+    }
+    for (const alert of admin.alerts) {
+      console.log(`- [${alert.severity}] ${alert.code}: ${alert.message}`);
+    }
+  }
 
   if (result.diff.added.length) {
     console.log("\nNew opportunities:");

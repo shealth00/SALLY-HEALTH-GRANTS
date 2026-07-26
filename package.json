@@ -4,6 +4,7 @@
   "scripts": {
     "govspending:monitor": "node govspending/monitor.js",
     "govspending:monitor:fixtures": "node govspending/monitor.js --fixtures",
+    "govspending:monitor:admin": "node govspending/monitor.js --admin",
     "govspending:test": "node --test govspending/test/monitor.test.js"
   },
   "devDependencies": {

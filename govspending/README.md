@@ -30,7 +30,26 @@ node govspending/monitor.js --fixtures --dry-run
 
 # Machine-readable summary
 node govspending/monitor.js --fixtures --json
+
+# Admin oversight report (alerts / action required)
+node govspending/monitor.js --admin
 ```
+
+## Admin oversight
+
+Each run writes an `admin` block to `data/last-run.json`:
+
+| `overall` | Meaning |
+|-----------|---------|
+| `healthy` | Live USAspending queries succeeded |
+| `attention` | Partial live success or preserved-snapshot safeguard |
+| `degraded` | Live API unavailable; fixtures fallback (not production alerts) |
+
+Safeguards:
+
+- Query lanes fail independently (`live-partial`) so one timeout does not discard other live results
+- Fixture fallback never overwrites a previous **live** opportunities snapshot
+- Only commit `govspending/data/*` when `hasChanges: true` **and** `sourceMode` is `live` / `live-partial`
 
 ## Tests
 

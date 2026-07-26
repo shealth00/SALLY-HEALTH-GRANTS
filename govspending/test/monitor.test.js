@@ -1,12 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, cp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, cp, readFile, rm, mkdir, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildSearchRequest } from "../lib/usaspendingClient.js";
 import { normalizeOpportunity, dedupeOpportunities } from "../lib/normalize.js";
 import { diffOpportunities, computeWindow } from "../lib/diff.js";
+import { buildAdminReport } from "../lib/adminReport.js";
 import { runMonitor, GOVSPENDING_ROOT } from "../lib/runMonitor.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -136,7 +137,136 @@ test("runMonitor falls back to fixtures when live API fails", async () => {
     assert.equal(result.snapshot.source.mode, "fixtures-fallback");
     assert.match(result.snapshot.source.liveError, /network blocked/);
     assert.ok(result.snapshot.opportunities.length >= 1);
+    assert.equal(result.lastRun.admin.overall, "degraded");
+    assert.ok(
+      result.lastRun.admin.alerts.some((a) => a.code === "LIVE_API_UNAVAILABLE")
+    );
   } finally {
     await rm(tempDir, { recursive: true, force: true });
   }
+});
+
+test("runMonitor keeps successful lanes when one live query fails", async () => {
+  const tempDir = await mkdtemp(path.join(os.tmpdir(), "govspending-"));
+  try {
+    await cp(path.join(GOVSPENDING_ROOT, "config.json"), path.join(tempDir, "config.json"));
+    await cp(
+      path.join(GOVSPENDING_ROOT, "fixtures"),
+      path.join(tempDir, "fixtures"),
+      { recursive: true }
+    );
+
+    let calls = 0;
+    const partialFetch = async () => {
+      calls += 1;
+      if (calls === 2) {
+        throw new Error("lane timeout");
+      }
+      return {
+        ok: true,
+        async json() {
+          return {
+            results: [
+              {
+                "Award ID": `LIVE-${calls}`,
+                "Recipient Name": `Live Recipient ${calls}`,
+                "Award Amount": 75000,
+                "Start Date": "2026-06-15",
+                "Description": "telehealth chronic care",
+                "Awarding Agency": "Department of Health and Human Services",
+                generated_internal_id: `CONT_AWD_LIVE_${calls}`,
+              },
+            ],
+          };
+        },
+      };
+    };
+
+    const result = await runMonitor({
+      rootDir: tempDir,
+      fetchImpl: partialFetch,
+      now: new Date("2026-07-26T14:00:00.000Z"),
+    });
+
+    assert.equal(result.snapshot.source.mode, "live-partial");
+    assert.equal(result.lastRun.admin.overall, "attention");
+    assert.ok(result.snapshot.opportunities.length >= 1);
+    assert.ok(
+      result.snapshot.queries.some((q) => q.mode === "live-failed")
+    );
+  } finally {
+    await rm(tempDir, { recursive: true, force: true });
+  }
+});
+
+test("fixtures-fallback preserves previous live snapshot", async () => {
+  const tempDir = await mkdtemp(path.join(os.tmpdir(), "govspending-"));
+  try {
+    await cp(path.join(GOVSPENDING_ROOT, "config.json"), path.join(tempDir, "config.json"));
+    await cp(
+      path.join(GOVSPENDING_ROOT, "fixtures"),
+      path.join(tempDir, "fixtures"),
+      { recursive: true }
+    );
+
+    const dataDir = path.join(tempDir, "data");
+    await mkdir(dataDir, { recursive: true });
+    const liveSnapshot = {
+      generatedAt: "2026-07-26T10:00:00.000Z",
+      organization: "Sally Health",
+      source: { mode: "live", liveError: null },
+      summary: {
+        total: 1,
+        subawards: 0,
+        primeAwards: 1,
+        added: 0,
+        removed: 0,
+        changed: 0,
+      },
+      opportunities: [
+        {
+          opportunityId: "live|prime|keep-me",
+          kind: "prime_award",
+          recipientName: "Keep Me LLC",
+          amount: 100000,
+        },
+      ],
+    };
+    await writeFile(
+      path.join(dataDir, "opportunities.json"),
+      `${JSON.stringify(liveSnapshot, null, 2)}\n`
+    );
+
+    const result = await runMonitor({
+      rootDir: tempDir,
+      fetchImpl: async () => {
+        throw new Error("egress blocked");
+      },
+      now: new Date("2026-07-26T15:00:00.000Z"),
+    });
+
+    assert.equal(result.lastRun.sourceMode, "fixtures-fallback");
+    assert.equal(result.lastRun.preservedLiveSnapshot, true);
+    assert.equal(result.snapshot.opportunities[0].opportunityId, "live|prime|keep-me");
+    assert.equal(result.lastRun.hasChanges, false);
+
+    const written = JSON.parse(
+      await readFile(path.join(dataDir, "opportunities.json"), "utf8")
+    );
+    assert.equal(written.source.mode, "live");
+    assert.equal(written.opportunities[0].recipientName, "Keep Me LLC");
+  } finally {
+    await rm(tempDir, { recursive: true, force: true });
+  }
+});
+
+test("buildAdminReport marks fixture fallback as degraded", () => {
+  const report = buildAdminReport({
+    sourceMode: "fixtures-fallback",
+    liveError: "fetch failed",
+    queryReports: [],
+    summary: { added: 0 },
+  });
+  assert.equal(report.overall, "degraded");
+  assert.match(report.actionRequired, /api\.usaspending\.gov/);
 });
