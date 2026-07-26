@@ -161,18 +161,66 @@ export function buildAdminReport({
   if (severities.includes("critical")) overall = "degraded";
   else if (severities.includes("warning")) overall = "attention";
 
-  const actionRequired =
-    overall === "degraded"
-      ? isEgressLikeFailure(liveError)
-        ? "Allow cloud egress to api.usaspending.gov and www.usaspending.gov, then re-run the monitor in live mode."
-        : "Restore USAspending API reachability, then re-run the monitor in live mode."
-      : overall === "attention"
-        ? "Review failed query lanes and confirm opportunity deltas before acting."
-        : null;
+  const prolonged =
+    degradedStreak >= prolongedDegradedThreshold &&
+    sourceMode === "fixtures-fallback";
+  const egressBlocked = isEgressLikeFailure(liveError);
+
+  let actionRequired = null;
+  if (overall === "degraded") {
+    if (prolonged && egressBlocked) {
+      actionRequired = `P1: Live USAspending monitoring degraded for ${degradedStreak} consecutive run(s). Add api.usaspending.gov and www.usaspending.gov to the Cursor cloud egress allowlist (environment/team network policy), then re-run node govspending/monitor.js --admin and confirm sourceMode is live or live-partial.`;
+    } else if (egressBlocked) {
+      actionRequired =
+        "Allow cloud egress to api.usaspending.gov and www.usaspending.gov, then re-run the monitor in live mode.";
+    } else if (prolonged) {
+      actionRequired = `P1: Live USAspending monitoring degraded for ${degradedStreak} consecutive run(s). Restore API reachability, then re-run the monitor in live mode.`;
+    } else {
+      actionRequired =
+        "Restore USAspending API reachability, then re-run the monitor in live mode.";
+    }
+  } else if (overall === "attention") {
+    actionRequired =
+      "Review failed query lanes and confirm opportunity deltas before acting.";
+  }
 
   const productionAlertsSuppressed =
     sourceMode === "fixtures-fallback" ||
     alerts.some((a) => a.code === "PRODUCTION_ALERTS_SUPPRESSED");
+
+  /** Machine-readable ops checklist for admin / automation consumers. */
+  const ops = {
+    priority:
+      overall === "degraded" ? (prolonged ? "P1" : "P2") : overall === "attention" ? "P3" : "P4",
+    blockedOn: egressBlocked
+      ? "cloud-egress-allowlist"
+      : sourceMode === "fixtures-fallback"
+        ? "usaspending-api-reachability"
+        : null,
+    requiredDomains: [...REQUIRED_EGRESS_DOMAINS],
+    suppressProductionAlerts: productionAlertsSuppressed,
+    acceptOpportunityDeltas:
+      !productionAlertsSuppressed &&
+      (sourceMode === "live" || sourceMode === "live-partial"),
+    nextChecks: [
+      ...(egressBlocked
+        ? [
+            "Add api.usaspending.gov and www.usaspending.gov to Cursor cloud agent network allowlist",
+            "Re-run: node govspending/monitor.js --admin",
+            "Confirm last-run.json sourceMode is live or live-partial and admin.overall is healthy/attention",
+          ]
+        : []),
+      ...(sourceMode === "fixtures-fallback" && !egressBlocked
+        ? [
+            "Inspect liveError in last-run.json for non-egress API failures",
+            "Re-run monitor after USAspending recovers",
+          ]
+        : []),
+      ...(sourceMode === "live-partial"
+        ? ["Inspect admin.alerts PARTIAL_LIVE_QUERY_FAILURE details", "Retry failed query lanes"]
+        : []),
+    ],
+  };
 
   return {
     overall,
@@ -180,10 +228,11 @@ export function buildAdminReport({
     alerts,
     liveQuerySuccessCount: queryReports.filter((q) => q.mode === "live").length,
     liveQueryFailureCount: failedQueries.length,
-    egressBlocked: isEgressLikeFailure(liveError),
+    egressBlocked,
     productionAlertsSuppressed,
     requiredEgressDomains: [...REQUIRED_EGRESS_DOMAINS],
     degradedStreak,
     lastLiveSuccessAt,
+    ops,
   };
 }

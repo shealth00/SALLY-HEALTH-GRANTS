@@ -1,10 +1,10 @@
 {
-  "ranAt": "2026-07-24T20:01:30.891Z",
+  "ranAt": "2026-07-26T20:03:25.092Z",
   "sourceMode": "fixtures-fallback",
   "liveError": "health-subawards: USAspending network/egress failure: fetch failed; health-naics-primes: USAspending network/egress failure: fetch failed; illinois-health-grants: USAspending network/egress failure: fetch failed",
   "window": {
-    "startDate": "2026-04-25",
-    "endDate": "2026-07-24"
+    "startDate": "2026-04-27",
+    "endDate": "2026-07-26"
   },
   "summary": {
     "total": 4,
@@ -20,7 +20,7 @@
   "preservedLiveSnapshot": false,
   "admin": {
     "overall": "degraded",
-    "actionRequired": "Allow cloud egress to api.usaspending.gov and www.usaspending.gov, then re-run the monitor in live mode.",
+    "actionRequired": "P1: Live USAspending monitoring degraded for 6 consecutive run(s). Add api.usaspending.gov and www.usaspending.gov to the Cursor cloud egress allowlist (environment/team network policy), then re-run node govspending/monitor.js --admin and confirm sourceMode is live or live-partial.",
     "alerts": [
       {
         "severity": "critical",
@@ -35,7 +35,7 @@
       {
         "severity": "critical",
         "code": "PROLONGED_DEGRADED",
-        "message": "Live USAspending monitoring has been degraded for 5 consecutive run(s). Production opportunity alerts remain suppressed until live reachability is restored."
+        "message": "Live USAspending monitoring has been degraded for 6 consecutive run(s). Production opportunity alerts remain suppressed until live reachability is restored."
       }
     ],
     "liveQuerySuccessCount": 0,
@@ -46,7 +46,22 @@
       "api.usaspending.gov",
       "www.usaspending.gov"
     ],
-    "degradedStreak": 5,
-    "lastLiveSuccessAt": null
+    "degradedStreak": 6,
+    "lastLiveSuccessAt": null,
+    "ops": {
+      "priority": "P1",
+      "blockedOn": "cloud-egress-allowlist",
+      "requiredDomains": [
+        "api.usaspending.gov",
+        "www.usaspending.gov"
+      ],
+      "suppressProductionAlerts": true,
+      "acceptOpportunityDeltas": false,
+      "nextChecks": [
+        "Add api.usaspending.gov and www.usaspending.gov to Cursor cloud agent network allowlist",
+        "Re-run: node govspending/monitor.js --admin",
+        "Confirm last-run.json sourceMode is live or live-partial and admin.overall is healthy/attention"
+      ]
+    }
   }
 }

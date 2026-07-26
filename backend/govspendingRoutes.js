@@ -80,11 +80,15 @@ export function createGovspendingRouter() {
     try {
       const useFixtures = Boolean(req.body?.fixtures);
       const result = await runMonitor({ useFixtures });
+      // Prefer lastRun.sourceMode: when a live snapshot is preserved under
+      // fixtures-fallback, snapshot.source.mode can still say "live".
       res.json({
         message: "Govspending monitor refresh complete.",
-        sourceMode: result.snapshot.source.mode,
-        summary: result.snapshot.summary,
+        sourceMode: result.lastRun.sourceMode,
+        summary: result.lastRun.summary || result.snapshot.summary,
         lastRun: result.lastRun,
+        wroteOpportunities: Boolean(result.wroteOpportunities),
+        preservedLiveSnapshot: Boolean(result.lastRun.preservedLiveSnapshot),
       });
     } catch (error) {
       console.error("Govspending refresh failed:", error);

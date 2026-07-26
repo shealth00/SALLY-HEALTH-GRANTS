@@ -143,6 +143,25 @@ function SubcontractorMonitor() {
                 Required egress: {status.admin.requiredEgressDomains.join(", ")}
               </p>
             )}
+          {status.admin.ops?.priority && (
+            <p className="mt-1">
+              Ops priority: {status.admin.ops.priority}
+              {status.admin.ops.blockedOn
+                ? ` · blocked on: ${status.admin.ops.blockedOn}`
+                : ""}
+              {status.admin.ops.acceptOpportunityDeltas === false
+                ? " · do not act on fixture opportunity deltas"
+                : ""}
+            </p>
+          )}
+          {Array.isArray(status.admin.ops?.nextChecks) &&
+            status.admin.ops.nextChecks.length > 0 && (
+              <ul className="mt-2 list-disc pl-5">
+                {status.admin.ops.nextChecks.slice(0, 4).map((check) => (
+                  <li key={check}>{check}</li>
+                ))}
+              </ul>
+            )}
           {(status.admin.alerts || []).slice(0, 4).map((alert, index) => (
             <p key={`${alert.code}-${index}`} className="mt-1">
               [{alert.severity}] {alert.code}: {alert.message}

@@ -285,6 +285,10 @@ test("buildAdminReport marks fixture fallback as degraded", () => {
   assert.ok(report.alerts.some((a) => a.code === "EGRESS_BLOCKED"));
   assert.ok(report.alerts.some((a) => a.code === "PRODUCTION_ALERTS_SUPPRESSED"));
   assert.match(report.actionRequired, /api\.usaspending\.gov/);
+  assert.equal(report.ops.priority, "P2");
+  assert.equal(report.ops.blockedOn, "cloud-egress-allowlist");
+  assert.equal(report.ops.acceptOpportunityDeltas, false);
+  assert.ok(report.ops.nextChecks.some((c) => /allowlist/i.test(c)));
 });
 
 test("buildAdminReport suppresses production alerts for non-egress live failures", () => {
@@ -371,6 +375,10 @@ test("buildAdminReport escalates prolonged degraded outages", () => {
   assert.equal(report.degradedStreak, PROLONGED_DEGRADED_THRESHOLD);
   assert.equal(report.lastLiveSuccessAt, "2026-07-26T10:00:00.000Z");
   assert.ok(report.alerts.some((a) => a.code === "PROLONGED_DEGRADED"));
+  assert.equal(report.ops.priority, "P1");
+  assert.equal(report.ops.blockedOn, "cloud-egress-allowlist");
+  assert.match(report.actionRequired, /^P1:/);
+  assert.match(report.actionRequired, /consecutive run/);
 });
 
 test("fixtures-fallback with no delta only refreshes last-run heartbeat", async () => {

@@ -82,6 +82,18 @@ async function main() {
         `Required egress: ${admin.requiredEgressDomains.join(", ")}`
       );
     }
+    if (admin.ops) {
+      console.log(
+        `Ops: priority=${admin.ops.priority}` +
+          (admin.ops.blockedOn ? ` blockedOn=${admin.ops.blockedOn}` : "") +
+          (admin.ops.acceptOpportunityDeltas
+            ? " acceptDeltas=yes"
+            : " acceptDeltas=no")
+      );
+      for (const check of admin.ops.nextChecks || []) {
+        console.log(`  · ${check}`);
+      }
+    }
     for (const alert of admin.alerts) {
       console.log(`- [${alert.severity}] ${alert.code}: ${alert.message}`);
     }
