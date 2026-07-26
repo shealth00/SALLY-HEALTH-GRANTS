@@ -104,6 +104,28 @@ function SubcontractorMonitor() {
       {loading && <p className="text-gray-600">Loading opportunities…</p>}
       {error && <p className="text-red-600">{error}</p>}
 
+      {status?.admin && status.admin.overall !== "healthy" && (
+        <div
+          className={`mb-4 rounded border p-3 text-sm ${
+            status.admin.overall === "degraded"
+              ? "border-red-300 bg-red-50 text-red-800"
+              : "border-amber-300 bg-amber-50 text-amber-900"
+          }`}
+        >
+          <p className="font-semibold">
+            Admin status: {status.admin.overall}
+          </p>
+          {status.admin.actionRequired && (
+            <p className="mt-1">{status.admin.actionRequired}</p>
+          )}
+          {(status.admin.alerts || []).slice(0, 3).map((alert) => (
+            <p key={alert.code} className="mt-1">
+              [{alert.severity}] {alert.message}
+            </p>
+          ))}
+        </div>
+      )}
+
       {snapshot && (
         <>
           <div className="mb-4 grid gap-3 sm:grid-cols-4">

@@ -35,7 +35,25 @@ export function createGovspendingRouter() {
         error: "Monitor has not run yet.",
       });
     }
-    res.json(lastRun);
+    res.json({
+      ...lastRun,
+      admin: lastRun.admin || {
+        overall: lastRun.sourceMode === "fixtures-fallback" ? "degraded" : "healthy",
+        actionRequired:
+          lastRun.sourceMode === "fixtures-fallback"
+            ? "Restore egress to api.usaspending.gov, then re-run the monitor in live mode."
+            : null,
+        alerts: lastRun.liveError
+          ? [
+              {
+                severity: "critical",
+                code: "LIVE_API_UNAVAILABLE",
+                message: lastRun.liveError,
+              },
+            ]
+          : [],
+      },
+    });
   });
 
   router.post("/refresh", async (req, res) => {
