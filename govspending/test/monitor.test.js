@@ -424,6 +424,25 @@ test("computeContinuity increments degraded streak and tracks last live success"
   assert.equal(sameHourRerun.firstDegradedAt, "2026-07-26T12:04:02.442Z");
   assert.ok(sameHourRerun.cadenceGapHours < 0.75);
 
+  const backwardSkew = computeContinuity({
+    overall: "degraded",
+    sourceMode: "fixtures-fallback",
+    // Local VM clock behind the previous hourly run timestamps.
+    ranAt: "2026-07-24T20:09:44.836Z",
+    previousAdmin: {
+      overall: "degraded",
+      degradedStreak: 11,
+      firstDegradedAt: "2026-07-26T12:04:02.442Z",
+    },
+    previousRanAt: "2026-07-26T22:03:04.896Z",
+    previousSourceMode: "fixtures-fallback",
+  });
+  assert.equal(backwardSkew.degradedStreak, 12);
+  assert.equal(backwardSkew.backwardClockSkew, true);
+  assert.equal(backwardSkew.cadenceGapHours, null);
+  // Must keep the established outage marker (do not collapse to local estimate).
+  assert.equal(backwardSkew.firstDegradedAt, "2026-07-26T12:04:02.442Z");
+
   const recovered = computeContinuity({
     overall: "healthy",
     sourceMode: "live",
@@ -490,9 +509,30 @@ test("buildAdminReport escalates extended outages to P0 and flags missed cadence
   assert.ok(report.alerts.some((a) => a.code === "EXTENDED_OUTAGE"));
   assert.ok(report.alerts.some((a) => a.code === "MISSED_HOURLY_CADENCE"));
   assert.match(report.actionRequired, /^P0:/);
+  assert.ok(report.ops.nextChecks.some((c) => /^P0:/i.test(c)));
   assert.ok(
     report.ops.nextChecks.some((c) => /automation cron/i.test(c))
   );
+});
+
+test("buildAdminReport estimates outage age under backward VM clock skew", () => {
+  const report = buildAdminReport({
+    sourceMode: "fixtures-fallback",
+    liveError: "USAspending network/egress failure: fetch failed",
+    queryReports: [],
+    summary: { added: 0 },
+    degradedStreak: EXTENDED_OUTAGE_STREAK_THRESHOLD,
+    firstDegradedAt: "2026-07-26T12:04:02.442Z",
+    // Local ranAt behind the preserved outage marker.
+    ranAt: "2026-07-24T20:09:44.836Z",
+    cadenceGapHours: null,
+  });
+  assert.equal(report.ops.outageAgeHours, EXTENDED_OUTAGE_STREAK_THRESHOLD - 1);
+  assert.equal(report.ops.extendedOutage, true);
+  assert.equal(report.ops.priority, "P0");
+  assert.equal(report.firstDegradedAt, "2026-07-26T12:04:02.442Z");
+  assert.ok(report.alerts.some((a) => a.code === "EXTENDED_OUTAGE"));
+  assert.ok(report.ops.nextChecks.some((c) => /^P0:/i.test(c)));
 });
 
 test("fixtures-fallback with no delta only refreshes last-run heartbeat", async () => {

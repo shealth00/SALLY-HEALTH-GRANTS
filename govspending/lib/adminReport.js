@@ -71,12 +71,14 @@ export function computeContinuity({
   }
 
   const ranMs = Date.parse(ranAt);
+  const prevMs = previousRanAt ? Date.parse(previousRanAt) : NaN;
+  // Cloud agent VMs can boot with clocks behind prior run timestamps.
+  const backwardClockSkew =
+    Number.isFinite(ranMs) && Number.isFinite(prevMs) && ranMs < prevMs;
+
   let cadenceGapHours = null;
-  if (previousRanAt && Number.isFinite(ranMs)) {
-    const prevMs = Date.parse(previousRanAt);
-    if (Number.isFinite(prevMs) && ranMs >= prevMs) {
-      cadenceGapHours = (ranMs - prevMs) / (60 * 60 * 1000);
-    }
+  if (Number.isFinite(prevMs) && Number.isFinite(ranMs) && ranMs >= prevMs) {
+    cadenceGapHours = (ranMs - prevMs) / (60 * 60 * 1000);
   }
 
   const sameHourRerun =
@@ -129,6 +131,15 @@ export function computeContinuity({
 
     if (priorAgeOk) {
       firstDegradedAt = previousAdmin.firstDegradedAt;
+    } else if (
+      backwardClockSkew &&
+      previousAdmin?.overall === "degraded" &&
+      previousAdmin?.firstDegradedAt &&
+      Number.isFinite(priorStartMs)
+    ) {
+      // Keep the established outage marker when this VM clock is behind the
+      // previous run (otherwise age collapses to a fresh local estimate).
+      firstDegradedAt = previousAdmin.firstDegradedAt;
     } else if (priorStreak > 0 && Number.isFinite(ranMs)) {
       // Legacy / skewed: estimate outage start from hourly cadence.
       firstDegradedAt = new Date(
@@ -144,6 +155,7 @@ export function computeContinuity({
     lastLiveSuccessAt,
     firstDegradedAt,
     cadenceGapHours,
+    backwardClockSkew,
   };
 }
 
@@ -184,9 +196,18 @@ export function buildAdminReport({
   const failedQueries = queryReports.filter((q) => q.error);
   const outageAgeHours = (() => {
     if (!firstDegradedAt || !ranAt) return null;
-    const ms = Date.parse(ranAt) - Date.parse(firstDegradedAt);
-    if (!Number.isFinite(ms) || ms < 0) return null;
-    return Math.round(ms / (60 * 60 * 1000));
+    const startMs = Date.parse(firstDegradedAt);
+    const endMs = Date.parse(ranAt);
+    if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) return null;
+    if (endMs >= startMs) {
+      return Math.round((endMs - startMs) / (60 * 60 * 1000));
+    }
+    // Backward VM clock: firstDegradedAt is ahead of local ranAt. Prefer a
+    // streak-based age so P0 wall-clock escalation is not understated.
+    if (degradedStreak > 0) {
+      return Math.max(degradedStreak - 1, 0);
+    }
+    return null;
   })();
   const roundedCadenceGapHours =
     cadenceGapHours == null || !Number.isFinite(cadenceGapHours)
@@ -366,6 +387,11 @@ export function buildAdminReport({
     cadenceGapHours: roundedCadenceGapHours,
     extendedOutage,
     nextChecks: [
+      ...(extendedOutage
+        ? [
+            "P0: escalate to environment admin — allowlist api.usaspending.gov and www.usaspending.gov in Cursor Cloud Network access (team/environment policy)",
+          ]
+        : []),
       ...(egressBlocked
         ? [
             "Add api.usaspending.gov and www.usaspending.gov to Cursor cloud agent network allowlist",
