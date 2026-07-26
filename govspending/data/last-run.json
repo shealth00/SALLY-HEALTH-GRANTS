@@ -1,5 +1,5 @@
 {
-  "ranAt": "2026-07-26T16:04:38.988Z",
+  "ranAt": "2026-07-26T17:03:04.448Z",
   "sourceMode": "fixtures-fallback",
   "liveError": "health-subawards: USAspending network/egress failure: fetch failed; health-naics-primes: USAspending network/egress failure: fetch failed; illinois-health-grants: USAspending network/egress failure: fetch failed",
   "window": {
@@ -35,6 +35,7 @@
     ],
     "liveQuerySuccessCount": 0,
     "liveQueryFailureCount": 3,
-    "egressBlocked": true
+    "egressBlocked": true,
+    "productionAlertsSuppressed": true
   }
 }
