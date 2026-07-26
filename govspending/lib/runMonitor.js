@@ -245,7 +245,15 @@ export async function runMonitor(options = {}) {
 
   if (options.write !== false) {
     await mkdir(dataDir, { recursive: true });
-    await writeFile(opportunitiesPath, `${JSON.stringify(snapshot, null, 2)}\n`);
+    // Admin: avoid churning opportunities.json on no-delta fixture fallbacks.
+    const writeOpportunities =
+      sourceMode !== "fixtures-fallback" || diff.hasChanges;
+    if (writeOpportunities) {
+      await writeFile(
+        opportunitiesPath,
+        `${JSON.stringify(snapshot, null, 2)}\n`
+      );
+    }
     await writeFile(lastRunPath, `${JSON.stringify(lastRun, null, 2)}\n`);
   }
 

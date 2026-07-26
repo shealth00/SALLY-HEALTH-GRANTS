@@ -4,10 +4,13 @@ import { mkdtemp, cp, readFile, rm, mkdir, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildSearchRequest } from "../lib/usaspendingClient.js";
+import {
+  buildSearchRequest,
+  classifyUsaSpendingFetchError,
+} from "../lib/usaspendingClient.js";
 import { normalizeOpportunity, dedupeOpportunities } from "../lib/normalize.js";
 import { diffOpportunities, computeWindow } from "../lib/diff.js";
-import { buildAdminReport } from "../lib/adminReport.js";
+import { buildAdminReport, isEgressLikeFailure } from "../lib/adminReport.js";
 import { runMonitor, GOVSPENDING_ROOT } from "../lib/runMonitor.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -125,7 +128,7 @@ test("runMonitor falls back to fixtures when live API fails", async () => {
     );
 
     const failingFetch = async () => {
-      throw new Error("network blocked");
+      throw new Error("fetch failed");
     };
 
     const result = await runMonitor({
@@ -135,11 +138,11 @@ test("runMonitor falls back to fixtures when live API fails", async () => {
     });
 
     assert.equal(result.snapshot.source.mode, "fixtures-fallback");
-    assert.match(result.snapshot.source.liveError, /network blocked/);
+    assert.match(result.snapshot.source.liveError, /network\/egress failure/);
     assert.ok(result.snapshot.opportunities.length >= 1);
     assert.equal(result.lastRun.admin.overall, "degraded");
     assert.ok(
-      result.lastRun.admin.alerts.some((a) => a.code === "LIVE_API_UNAVAILABLE")
+      result.lastRun.admin.alerts.some((a) => a.code === "EGRESS_BLOCKED")
     );
   } finally {
     await rm(tempDir, { recursive: true, force: true });
@@ -268,5 +271,64 @@ test("buildAdminReport marks fixture fallback as degraded", () => {
     summary: { added: 0 },
   });
   assert.equal(report.overall, "degraded");
+  assert.equal(report.egressBlocked, true);
+  assert.ok(report.alerts.some((a) => a.code === "EGRESS_BLOCKED"));
+  assert.ok(report.alerts.some((a) => a.code === "PRODUCTION_ALERTS_SUPPRESSED"));
   assert.match(report.actionRequired, /api\.usaspending\.gov/);
+});
+
+test("classifyUsaSpendingFetchError labels timeouts and egress failures", () => {
+  const timeout = classifyUsaSpendingFetchError(
+    Object.assign(new Error("aborted"), { name: "AbortError" }),
+    12000
+  );
+  assert.match(timeout.message, /timed out after 12000ms/);
+
+  const egress = classifyUsaSpendingFetchError(new Error("fetch failed"));
+  assert.match(egress.message, /network\/egress failure/);
+  assert.equal(isEgressLikeFailure(egress.message), true);
+});
+
+test("fixtures-fallback with no delta only refreshes last-run heartbeat", async () => {
+  const tempDir = await mkdtemp(path.join(os.tmpdir(), "govspending-"));
+  try {
+    await cp(path.join(GOVSPENDING_ROOT, "config.json"), path.join(tempDir, "config.json"));
+    await cp(
+      path.join(GOVSPENDING_ROOT, "fixtures"),
+      path.join(tempDir, "fixtures"),
+      { recursive: true }
+    );
+
+    await runMonitor({
+      rootDir: tempDir,
+      useFixtures: true,
+      now: new Date("2026-07-26T14:00:00.000Z"),
+    });
+
+    const opportunitiesPath = path.join(tempDir, "data", "opportunities.json");
+    const before = await readFile(opportunitiesPath, "utf8");
+
+    const result = await runMonitor({
+      rootDir: tempDir,
+      fetchImpl: async () => {
+        throw new Error("fetch failed");
+      },
+      now: new Date("2026-07-26T16:00:00.000Z"),
+    });
+
+    assert.equal(result.lastRun.sourceMode, "fixtures-fallback");
+    assert.equal(result.lastRun.hasChanges, false);
+    assert.equal(result.lastRun.admin.overall, "degraded");
+    assert.ok(result.lastRun.admin.alerts.some((a) => a.code === "EGRESS_BLOCKED"));
+
+    const after = await readFile(opportunitiesPath, "utf8");
+    assert.equal(after, before);
+
+    const lastRun = JSON.parse(
+      await readFile(path.join(tempDir, "data", "last-run.json"), "utf8")
+    );
+    assert.equal(lastRun.ranAt, "2026-07-26T16:00:00.000Z");
+  } finally {
+    await rm(tempDir, { recursive: true, force: true });
+  }
 });

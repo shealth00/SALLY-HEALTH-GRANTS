@@ -3,6 +3,16 @@
  */
 
 /**
+ * @param {string|null|undefined} liveError
+ */
+export function isEgressLikeFailure(liveError) {
+  if (!liveError) return false;
+  return /network\/egress|fetch failed|ECONNRESET|ENOTFOUND|ECONNREFUSED|EAI_AGAIN|egress blocked|Connection reset/i.test(
+    liveError
+  );
+}
+
+/**
  * @param {object} input
  * @param {string} input.sourceMode
  * @param {string|null} input.liveError
@@ -21,13 +31,22 @@ export function buildAdminReport({
   const failedQueries = queryReports.filter((q) => q.error);
 
   if (sourceMode === "fixtures-fallback") {
+    const egressBlocked = isEgressLikeFailure(liveError);
     alerts.push({
       severity: "critical",
-      code: "LIVE_API_UNAVAILABLE",
+      code: egressBlocked ? "EGRESS_BLOCKED" : "LIVE_API_UNAVAILABLE",
       message:
         liveError ||
         "USAspending live API unreachable; using fixture fallback. Do not treat results as production alerts.",
     });
+    if (egressBlocked) {
+      alerts.push({
+        severity: "critical",
+        code: "PRODUCTION_ALERTS_SUPPRESSED",
+        message:
+          "Fixture-fallback results are not production opportunity alerts. Wait for live or live-partial sourceMode.",
+      });
+    }
   }
 
   if (sourceMode === "live-partial") {
@@ -74,7 +93,9 @@ export function buildAdminReport({
 
   const actionRequired =
     overall === "degraded"
-      ? "Restore egress to api.usaspending.gov / www.usaspending.gov, then re-run the monitor in live mode."
+      ? isEgressLikeFailure(liveError)
+        ? "Allow cloud egress to api.usaspending.gov and www.usaspending.gov, then re-run the monitor in live mode."
+        : "Restore USAspending API reachability, then re-run the monitor in live mode."
       : overall === "attention"
         ? "Review failed query lanes and confirm opportunity deltas before acting."
         : null;
@@ -85,5 +106,6 @@ export function buildAdminReport({
     alerts,
     liveQuerySuccessCount: queryReports.filter((q) => q.mode === "live").length,
     liveQueryFailureCount: failedQueries.length,
+    egressBlocked: isEgressLikeFailure(liveError),
   };
 }

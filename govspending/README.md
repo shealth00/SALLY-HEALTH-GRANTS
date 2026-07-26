@@ -45,11 +45,22 @@ Each run writes an `admin` block to `data/last-run.json`:
 | `attention` | Partial live success or preserved-snapshot safeguard |
 | `degraded` | Live API unavailable; fixtures fallback (not production alerts) |
 
+Key alert codes:
+
+| Code | Meaning |
+|------|---------|
+| `EGRESS_BLOCKED` | Transport/network failure reaching USAspending (allowlist/firewall) |
+| `LIVE_API_UNAVAILABLE` | Live API failed for a non-egress reason |
+| `PRODUCTION_ALERTS_SUPPRESSED` | Fixture fallback must not drive opportunity actions |
+| `PARTIAL_LIVE_QUERY_FAILURE` | One or more query lanes failed; others succeeded |
+| `PRESERVED_LIVE_SNAPSHOT` | Prior live snapshot kept instead of writing fixtures |
+
 Safeguards:
 
 - Query lanes fail independently (`live-partial`) so one timeout does not discard other live results
 - Fixture fallback never overwrites a previous **live** opportunities snapshot
-- Only commit `govspending/data/*` when `hasChanges: true` **and** `sourceMode` is `live` / `live-partial`
+- No-delta fixture fallbacks refresh `last-run.json` only (no opportunities churn)
+- Only commit opportunity deltas when `hasChanges: true` **and** `sourceMode` is `live` / `live-partial`
 
 ## Tests
 

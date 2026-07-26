@@ -56,10 +56,47 @@ export class UsaSpendingClient {
       }
 
       return response.json();
+    } catch (error) {
+      throw classifyUsaSpendingFetchError(error, this.timeoutMs);
     } finally {
       clearTimeout(timer);
     }
   }
+}
+
+/**
+ * Normalize transport failures so admin oversight can distinguish
+ * timeouts / egress blocks from HTTP API errors.
+ * @param {unknown} error
+ * @param {number} timeoutMs
+ */
+export function classifyUsaSpendingFetchError(error, timeoutMs = DEFAULT_TIMEOUT_MS) {
+  if (error instanceof Error) {
+    // Already classified / HTTP API errors — pass through.
+    if (
+      error.message.startsWith("USAspending API ") ||
+      error.message.startsWith("USAspending request timed out") ||
+      error.message.startsWith("USAspending network/egress failure:")
+    ) {
+      return error;
+    }
+
+    if (error.name === "AbortError") {
+      return new Error(`USAspending request timed out after ${timeoutMs}ms`);
+    }
+
+    if (
+      /fetch failed|ECONNRESET|ENOTFOUND|ECONNREFUSED|EAI_AGAIN|certificate|network|SOCKS|TLS/i.test(
+        error.message
+      )
+    ) {
+      return new Error(`USAspending network/egress failure: ${error.message}`);
+    }
+
+    return error;
+  }
+
+  return new Error(String(error));
 }
 
 /**
