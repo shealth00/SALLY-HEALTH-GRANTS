@@ -344,7 +344,8 @@ test("computeContinuity increments degraded streak and tracks last live success"
     previousSourceMode: "fixtures-fallback",
   });
   assert.equal(legacy.degradedStreak, PROLONGED_DEGRADED_THRESHOLD + 1);
-  assert.equal(legacy.firstDegradedAt, "2026-07-26T15:30:00.000Z");
+  // Legacy files lack firstDegradedAt; estimate from hourly streak.
+  assert.equal(legacy.firstDegradedAt, "2026-07-26T13:30:00.000Z");
 
   const skewed = computeContinuity({
     overall: "degraded",
@@ -359,6 +360,20 @@ test("computeContinuity increments degraded streak and tracks last live success"
   assert.equal(skewed.degradedStreak, 8);
   // Reject clock-skewed marker; estimate from hourly streak instead.
   assert.equal(skewed.firstDegradedAt, "2026-07-26T14:00:00.000Z");
+
+  const tooYoung = computeContinuity({
+    overall: "degraded",
+    sourceMode: "fixtures-fallback",
+    ranAt: "2026-07-26T21:03:18.000Z",
+    previousAdmin: {
+      degradedStreak: 9,
+      firstDegradedAt: "2026-07-26T21:02:45.721Z",
+    },
+    previousRanAt: "2026-07-26T21:02:45.721Z",
+  });
+  assert.equal(tooYoung.degradedStreak, 10);
+  // Reject reset/young marker that cannot explain a long streak.
+  assert.equal(tooYoung.firstDegradedAt, "2026-07-26T12:03:18.000Z");
 
   const second = computeContinuity({
     overall: "degraded",

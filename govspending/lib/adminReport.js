@@ -68,34 +68,29 @@ export function computeContinuity({
     const priorStartMs = previousAdmin?.firstDegradedAt
       ? Date.parse(previousAdmin.firstDegradedAt)
       : NaN;
-    // Keep prior marker when clocks look consistent with hourly cadence.
-    // Reject markers warped by VM clock skew (age >> streak).
+    // Keep prior marker only when age is consistent with hourly streak.
+    // Reject clock-skewed (too old) or reset (too young) markers.
     const maxAgeMs = Math.max(priorStreak + 1, 1) * 3 * 60 * 60 * 1000;
-    if (
+    const minAgeMs =
+      priorStreak > 1
+        ? Math.max(priorStreak - 1, 0) * 0.5 * 60 * 60 * 1000
+        : 0;
+    const priorAgeOk =
       Number.isFinite(priorStartMs) &&
       Number.isFinite(ranMs) &&
       priorStartMs <= ranMs &&
-      ranMs - priorStartMs <= maxAgeMs
-    ) {
+      ranMs - priorStartMs <= maxAgeMs &&
+      ranMs - priorStartMs >= minAgeMs;
+
+    if (priorAgeOk) {
       firstDegradedAt = previousAdmin.firstDegradedAt;
+    } else if (priorStreak > 0 && Number.isFinite(ranMs)) {
+      // Legacy / skewed: estimate outage start from hourly cadence.
+      firstDegradedAt = new Date(
+        ranMs - priorStreak * 60 * 60 * 1000
+      ).toISOString();
     } else {
-      const prevMs = previousRanAt ? Date.parse(previousRanAt) : NaN;
-      const maxGapMs = Math.max(priorStreak, 1) * 2 * 60 * 60 * 1000;
-      if (
-        priorStreak > 0 &&
-        Number.isFinite(prevMs) &&
-        Number.isFinite(ranMs) &&
-        prevMs <= ranMs &&
-        ranMs - prevMs <= maxGapMs
-      ) {
-        firstDegradedAt = previousRanAt;
-      } else if (priorStreak > 0 && Number.isFinite(ranMs)) {
-        firstDegradedAt = new Date(
-          ranMs - priorStreak * 60 * 60 * 1000
-        ).toISOString();
-      } else {
-        firstDegradedAt = ranAt;
-      }
+      firstDegradedAt = ranAt;
     }
   }
 
