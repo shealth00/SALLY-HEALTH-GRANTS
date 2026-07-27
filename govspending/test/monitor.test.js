@@ -526,13 +526,29 @@ test("buildAdminReport estimates outage age under backward VM clock skew", () =>
     // Local ranAt behind the preserved outage marker.
     ranAt: "2026-07-24T20:09:44.836Z",
     cadenceGapHours: null,
+    backwardClockSkew: true,
   });
   assert.equal(report.ops.outageAgeHours, EXTENDED_OUTAGE_STREAK_THRESHOLD - 1);
   assert.equal(report.ops.extendedOutage, true);
   assert.equal(report.ops.priority, "P0");
+  assert.equal(report.ops.backwardClockSkew, true);
   assert.equal(report.firstDegradedAt, "2026-07-26T12:04:02.442Z");
   assert.ok(report.alerts.some((a) => a.code === "EXTENDED_OUTAGE"));
   assert.ok(report.ops.nextChecks.some((c) => /^P0:/i.test(c)));
+
+  const healthyClock = buildAdminReport({
+    sourceMode: "fixtures-fallback",
+    liveError: "USAspending network/egress failure: fetch failed",
+    queryReports: [],
+    summary: { added: 0 },
+    degradedStreak: EXTENDED_OUTAGE_STREAK_THRESHOLD,
+    firstDegradedAt: "2026-07-26T12:04:02.442Z",
+    ranAt: "2026-07-27T00:04:02.442Z",
+    cadenceGapHours: 1,
+    backwardClockSkew: false,
+  });
+  assert.equal(healthyClock.ops.backwardClockSkew, false);
+  assert.equal(healthyClock.ops.outageAgeHours, 12);
 });
 
 test("fixtures-fallback with no delta only refreshes last-run heartbeat", async () => {

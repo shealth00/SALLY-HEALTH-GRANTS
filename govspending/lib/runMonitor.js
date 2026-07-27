@@ -152,6 +152,7 @@ export async function runMonitor(options = {}) {
         firstDegradedAt: continuity.firstDegradedAt,
         ranAt: generatedAt,
         cadenceGapHours: continuity.cadenceGapHours,
+        backwardClockSkew: continuity.backwardClockSkew,
       });
 
       const lastRun = {
@@ -259,6 +260,7 @@ export async function runMonitor(options = {}) {
     firstDegradedAt: continuity.firstDegradedAt,
     ranAt: generatedAt,
     cadenceGapHours: continuity.cadenceGapHours,
+    backwardClockSkew: continuity.backwardClockSkew,
   });
 
   const lastRun = {

@@ -171,6 +171,7 @@ export function computeContinuity({
  * @param {string|null} [input.firstDegradedAt]
  * @param {string|null} [input.ranAt]
  * @param {number|null} [input.cadenceGapHours]
+ * @param {boolean} [input.backwardClockSkew]
  * @param {number} [input.prolongedDegradedThreshold]
  * @param {number} [input.extendedOutageHoursThreshold]
  * @param {number} [input.extendedOutageStreakThreshold]
@@ -187,6 +188,7 @@ export function buildAdminReport({
   firstDegradedAt = null,
   ranAt = null,
   cadenceGapHours = null,
+  backwardClockSkew = false,
   prolongedDegradedThreshold = PROLONGED_DEGRADED_THRESHOLD,
   extendedOutageHoursThreshold = EXTENDED_OUTAGE_HOURS_THRESHOLD,
   extendedOutageStreakThreshold = EXTENDED_OUTAGE_STREAK_THRESHOLD,
@@ -385,6 +387,7 @@ export function buildAdminReport({
     outageStartedAt: firstDegradedAt,
     outageAgeHours,
     cadenceGapHours: roundedCadenceGapHours,
+    backwardClockSkew: Boolean(backwardClockSkew),
     extendedOutage,
     nextChecks: [
       ...(extendedOutage

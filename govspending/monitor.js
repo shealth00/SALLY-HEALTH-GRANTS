@@ -97,6 +97,7 @@ async function main() {
             ? " acceptDeltas=yes"
             : " acceptDeltas=no") +
           (admin.ops.extendedOutage ? " extendedOutage=yes" : "") +
+          (admin.ops.backwardClockSkew ? " backwardClockSkew=yes" : "") +
           (admin.ops.cadenceGapHours != null
             ? ` cadenceGap=${admin.ops.cadenceGapHours}h`
             : "")
