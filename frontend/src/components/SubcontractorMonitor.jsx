@@ -170,6 +170,9 @@ function SubcontractorMonitor() {
               {status.admin.ops.backwardClockSkew
                 ? " · VM clock behind prior run (age estimated from streak)"
                 : ""}
+              {status.admin.ops.clockCorrected
+                ? ` · clock corrected (${status.admin.ops.clockSource || "override"})`
+                : ""}
               {status.admin.ops.cadenceGapHours != null
                 ? ` · cadence gap: ~${status.admin.ops.cadenceGapHours}h`
                 : ""}
