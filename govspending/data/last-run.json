@@ -1,5 +1,5 @@
 {
-  "ranAt": "2026-07-28T16:01:47.280Z",
+  "ranAt": "2026-07-28T17:01:06.010Z",
   "sourceMode": "fixtures-fallback",
   "liveError": "health-subawards: USAspending network/egress failure: fetch failed; health-naics-primes: USAspending network/egress failure: fetch failed; illinois-health-grants: USAspending network/egress failure: fetch failed",
   "window": {
@@ -20,7 +20,7 @@
   "preservedLiveSnapshot": false,
   "admin": {
     "overall": "degraded",
-    "actionRequired": "P0: Live USAspending monitoring outage extended (~52h). Add api.usaspending.gov and www.usaspending.gov to the Cursor cloud egress allowlist (environment/team Network access), then re-run node govspending/monitor.js --admin and confirm sourceMode is live or live-partial.",
+    "actionRequired": "P0: Live USAspending monitoring outage extended (~53h). Add api.usaspending.gov and www.usaspending.gov to the Cursor cloud egress allowlist (environment/team Network access), then re-run node govspending/monitor.js --admin and confirm sourceMode is live or live-partial.",
     "alerts": [
       {
         "severity": "critical",
@@ -33,19 +33,14 @@
         "message": "Fixture-fallback results are not production opportunity alerts. Wait for live or live-partial sourceMode."
       },
       {
-        "severity": "warning",
-        "code": "MISSED_HOURLY_CADENCE",
-        "message": "Hourly monitor cadence gap is ~13h (threshold 2.5h). Confirm the grants automation schedule is healthy."
-      },
-      {
         "severity": "critical",
         "code": "PROLONGED_DEGRADED",
-        "message": "Live USAspending monitoring has been degraded for 41 consecutive run(s) (~52h since 2026-07-26T12:04:02.442Z). Production opportunity alerts remain suppressed until live reachability is restored."
+        "message": "Live USAspending monitoring has been degraded for 42 consecutive run(s) (~53h since 2026-07-26T12:04:02.442Z). Production opportunity alerts remain suppressed until live reachability is restored."
       },
       {
         "severity": "critical",
         "code": "EXTENDED_OUTAGE",
-        "message": "Live USAspending monitoring outage is extended (~52h wall-clock, streak=41). Admin must restore egress/API reachability before opportunity alerts can resume."
+        "message": "Live USAspending monitoring outage is extended (~53h wall-clock, streak=42). Admin must restore egress/API reachability before opportunity alerts can resume."
       }
     ],
     "liveQuerySuccessCount": 0,
@@ -56,7 +51,7 @@
       "api.usaspending.gov",
       "www.usaspending.gov"
     ],
-    "degradedStreak": 41,
+    "degradedStreak": 42,
     "lastLiveSuccessAt": null,
     "firstDegradedAt": "2026-07-26T12:04:02.442Z",
     "ops": {
@@ -69,17 +64,15 @@
       "suppressProductionAlerts": true,
       "acceptOpportunityDeltas": false,
       "outageStartedAt": "2026-07-26T12:04:02.442Z",
-      "outageAgeHours": 52,
-      "cadenceGapHours": 13,
+      "outageAgeHours": 53,
+      "cadenceGapHours": 1,
       "backwardClockSkew": false,
       "extendedOutage": true,
       "nextChecks": [
         "P0: escalate to environment admin — allowlist api.usaspending.gov and www.usaspending.gov in Cursor Cloud Network access (team/environment policy)",
         "Add api.usaspending.gov and www.usaspending.gov to Cursor cloud agent network allowlist",
         "Re-run: node govspending/monitor.js --admin",
-        "Confirm last-run.json sourceMode is live or live-partial and admin.overall is healthy/attention",
-        "Verify Cursor automation cron for grants workflow is firing hourly",
-        "Inspect prior cloud-agent runs for crashes or skipped hours"
+        "Confirm last-run.json sourceMode is live or live-partial and admin.overall is healthy/attention"
       ],
       "clockSource": "env",
       "clockCorrected": true
