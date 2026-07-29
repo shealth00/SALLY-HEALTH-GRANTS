@@ -1,4 +1,12 @@
 {
+  "name": "sally-health-grants",
+  "private": true,
+  "scripts": {
+    "govspending:monitor": "node govspending/monitor.js",
+    "govspending:monitor:fixtures": "node govspending/monitor.js --fixtures",
+    "govspending:monitor:admin": "node govspending/monitor.js --admin",
+    "govspending:test": "node --test govspending/test/monitor.test.js"
+  },
   "devDependencies": {
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.49",
