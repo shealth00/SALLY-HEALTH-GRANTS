@@ -1,5 +1,5 @@
 {
-  "ranAt": "2026-07-29T03:01:51.632Z",
+  "ranAt": "2026-07-29T04:02:17.296Z",
   "sourceMode": "fixtures-fallback",
   "liveError": "health-subawards: USAspending network/egress failure: fetch failed; health-naics-primes: USAspending network/egress failure: fetch failed; illinois-health-grants: USAspending network/egress failure: fetch failed",
   "window": {
@@ -20,7 +20,7 @@
   "preservedLiveSnapshot": false,
   "admin": {
     "overall": "degraded",
-    "actionRequired": "P0: Live USAspending monitoring outage extended (~63h). Add api.usaspending.gov and www.usaspending.gov to the Cursor cloud egress allowlist (environment/team Network access), then re-run node govspending/monitor.js --admin and confirm sourceMode is live or live-partial.",
+    "actionRequired": "P0: Live USAspending monitoring outage extended (~64h). Add api.usaspending.gov and www.usaspending.gov to the Cursor cloud egress allowlist (environment/team Network access), then re-run node govspending/monitor.js --admin and confirm sourceMode is live or live-partial.",
     "alerts": [
       {
         "severity": "critical",
@@ -35,12 +35,12 @@
       {
         "severity": "critical",
         "code": "PROLONGED_DEGRADED",
-        "message": "Live USAspending monitoring has been degraded for 52 consecutive run(s) (~63h since 2026-07-26T12:04:02.442Z). Production opportunity alerts remain suppressed until live reachability is restored."
+        "message": "Live USAspending monitoring has been degraded for 53 consecutive run(s) (~64h since 2026-07-26T12:04:02.442Z). Production opportunity alerts remain suppressed until live reachability is restored."
       },
       {
         "severity": "critical",
         "code": "EXTENDED_OUTAGE",
-        "message": "Live USAspending monitoring outage is extended (~63h wall-clock, streak=52). Admin must restore egress/API reachability before opportunity alerts can resume."
+        "message": "Live USAspending monitoring outage is extended (~64h wall-clock, streak=53). Admin must restore egress/API reachability before opportunity alerts can resume."
       }
     ],
     "liveQuerySuccessCount": 0,
@@ -51,7 +51,7 @@
       "api.usaspending.gov",
       "www.usaspending.gov"
     ],
-    "degradedStreak": 52,
+    "degradedStreak": 53,
     "lastLiveSuccessAt": null,
     "firstDegradedAt": "2026-07-26T12:04:02.442Z",
     "ops": {
@@ -64,7 +64,7 @@
       "suppressProductionAlerts": true,
       "acceptOpportunityDeltas": false,
       "outageStartedAt": "2026-07-26T12:04:02.442Z",
-      "outageAgeHours": 63,
+      "outageAgeHours": 64,
       "cadenceGapHours": 1,
       "backwardClockSkew": false,
       "extendedOutage": true,
