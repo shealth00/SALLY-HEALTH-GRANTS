@@ -1,0 +1,84 @@
+{
+  "health-subawards": {
+    "limit": 25,
+    "results": [
+      {
+        "internal_id": 1001,
+        "Sub-Award ID": "SUB-IL-WOUND-001",
+        "Sub-Award Amount": 185000,
+        "Sub-Award Date": "2026-06-15",
+        "Sub-Award Description": "Wound care and chronic care management services for veteran home health patients in Illinois.",
+        "Sub-Awardee Name": "MIDWEST CLINICAL PARTNERS LLC",
+        "Sub-Recipient UEI": "ABC123DEF456",
+        "Prime Award ID": "36C12324D0001",
+        "Prime Recipient Name": "NATIONAL HOME HEALTH SYSTEMS INC",
+        "Awarding Agency": "Department of Veterans Affairs",
+        "Awarding Sub Agency": "Veterans Health Administration",
+        "NAICS": "621610",
+        "Sub-Award Type": "sub-contract",
+        "prime_award_generated_internal_id": "CONT_AWD_36C12324D0001_3600_-NONE-_-NONE-"
+      },
+      {
+        "internal_id": 1002,
+        "Sub-Award ID": "SUB-RPM-7781",
+        "Sub-Award Amount": 92000,
+        "Sub-Award Date": "2026-05-28",
+        "Sub-Award Description": "Remote patient monitoring and telehealth care coordination for chronic disease populations.",
+        "Sub-Awardee Name": "PRAIRIE TELEHEALTH SERVICES",
+        "Sub-Recipient UEI": "XYZ987UVW654",
+        "Prime Award ID": "75H12324C0044",
+        "Prime Recipient Name": "FEDERAL CARE NETWORK",
+        "Awarding Agency": "Department of Health and Human Services",
+        "Awarding Sub Agency": "Health Resources and Services Administration",
+        "NAICS": "621999",
+        "Sub-Award Type": "sub-contract",
+        "prime_award_generated_internal_id": "CONT_AWD_75H12324C0044_7505_-NONE-_-NONE-"
+      }
+    ],
+    "page_metadata": { "page": 1, "hasNext": false }
+  },
+  "health-naics-primes": {
+    "limit": 25,
+    "results": [
+      {
+        "internal_id": 2001,
+        "Award ID": "75N92024C0008",
+        "Recipient Name": "GREAT LAKES AMBULATORY CARE INC",
+        "Recipient UEI": "GLA111222333",
+        "Award Amount": 2400000,
+        "Start Date": "2026-04-01",
+        "End Date": "2028-03-31",
+        "Description": "Ambulatory chronic care and patient monitoring support services with subcontracting plan.",
+        "Awarding Agency": "Department of Health and Human Services",
+        "Awarding Sub Agency": "National Institutes of Health",
+        "NAICS": "621999",
+        "Award Type": null,
+        "Contract Award Type": "Definitive Contract",
+        "generated_internal_id": "CONT_AWD_75N92024C0008_7529_-NONE-_-NONE-"
+      }
+    ],
+    "page_metadata": { "page": 1, "hasNext": false }
+  },
+  "illinois-health-grants": {
+    "limit": 25,
+    "results": [
+      {
+        "internal_id": 3001,
+        "Award ID": "U2C123456",
+        "Recipient Name": "ILLINOIS COMMUNITY HEALTH ALLIANCE",
+        "Recipient UEI": "ICH444555666",
+        "Award Amount": 750000,
+        "Start Date": "2026-03-01",
+        "End Date": "2027-02-28",
+        "Description": "Statewide telehealth and home health capacity expansion for underserved chronic care patients.",
+        "Awarding Agency": "Department of Health and Human Services",
+        "Awarding Sub Agency": "Health Resources and Services Administration",
+        "NAICS": null,
+        "Award Type": "Block Grant",
+        "Contract Award Type": null,
+        "generated_internal_id": "ASST_NON_U2C123456_7523"
+      }
+    ],
+    "page_metadata": { "page": 1, "hasNext": false }
+  }
+}
