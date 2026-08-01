@@ -1,0 +1,160 @@
+{
+  "generatedAt": "2026-07-26T15:04:13.670Z",
+  "organization": "Sally Health",
+  "source": {
+    "name": "USAspending.gov",
+    "note": "Official federal spending portal is USAspending.gov (govspending.gov does not resolve).",
+    "mode": "fixtures-fallback",
+    "window": {
+      "startDate": "2026-04-27",
+      "endDate": "2026-07-26"
+    },
+    "liveError": "health-subawards: fetch failed; health-naics-primes: fetch failed; illinois-health-grants: fetch failed"
+  },
+  "summary": {
+    "total": 4,
+    "subawards": 2,
+    "primeAwards": 2,
+    "added": 0,
+    "removed": 0,
+    "changed": 0
+  },
+  "queries": [
+    {
+      "queryId": "health-subawards",
+      "label": "Health subawards (keywords)",
+      "count": 2,
+      "mode": "fixtures-fallback",
+      "liveError": "fetch failed"
+    },
+    {
+      "queryId": "health-naics-primes",
+      "label": "Prime awards in health NAICS",
+      "count": 1,
+      "mode": "fixtures-fallback",
+      "liveError": "fetch failed"
+    },
+    {
+      "queryId": "illinois-health-grants",
+      "label": "Illinois health assistance awards",
+      "count": 1,
+      "mode": "fixtures-fallback",
+      "liveError": "fetch failed"
+    }
+  ],
+  "opportunities": [
+    {
+      "opportunityId": "health-subawards|sub|sub-il-wound-001|midwest clinical partners llc|2026-06-15",
+      "kind": "subaward",
+      "queryId": "health-subawards",
+      "queryLabel": "Health subawards (keywords)",
+      "awardId": "SUB-IL-WOUND-001",
+      "primeAwardId": "36C12324D0001",
+      "generatedInternalId": "CONT_AWD_36C12324D0001_3600_-NONE-_-NONE-",
+      "recipientName": "MIDWEST CLINICAL PARTNERS LLC",
+      "primeRecipientName": "NATIONAL HOME HEALTH SYSTEMS INC",
+      "recipientUei": "ABC123DEF456",
+      "amount": 185000,
+      "date": "2026-06-15",
+      "endDate": null,
+      "description": "Wound care and chronic care management services for veteran home health patients in Illinois.",
+      "awardingAgency": "Department of Veterans Affairs",
+      "awardingSubAgency": "Veterans Health Administration",
+      "naics": "621610",
+      "awardType": "sub-contract",
+      "portalUrl": "https://www.usaspending.gov/award/CONT_AWD_36C12324D0001_3600_-NONE-_-NONE-",
+      "relevanceTags": [
+        "health-subawards",
+        "subcontractor-lane",
+        "wound-care",
+        "chronic-care",
+        "home-health",
+        "care-management"
+      ]
+    },
+    {
+      "opportunityId": "health-subawards|sub|sub-rpm-7781|prairie telehealth services|2026-05-28",
+      "kind": "subaward",
+      "queryId": "health-subawards",
+      "queryLabel": "Health subawards (keywords)",
+      "awardId": "SUB-RPM-7781",
+      "primeAwardId": "75H12324C0044",
+      "generatedInternalId": "CONT_AWD_75H12324C0044_7505_-NONE-_-NONE-",
+      "recipientName": "PRAIRIE TELEHEALTH SERVICES",
+      "primeRecipientName": "FEDERAL CARE NETWORK",
+      "recipientUei": "XYZ987UVW654",
+      "amount": 92000,
+      "date": "2026-05-28",
+      "endDate": null,
+      "description": "Remote patient monitoring and telehealth care coordination for chronic disease populations.",
+      "awardingAgency": "Department of Health and Human Services",
+      "awardingSubAgency": "Health Resources and Services Administration",
+      "naics": "621999",
+      "awardType": "sub-contract",
+      "portalUrl": "https://www.usaspending.gov/award/CONT_AWD_75H12324C0044_7505_-NONE-_-NONE-",
+      "relevanceTags": [
+        "health-subawards",
+        "subcontractor-lane",
+        "chronic-care",
+        "rpm",
+        "telehealth",
+        "monitoring"
+      ]
+    },
+    {
+      "opportunityId": "health-naics-primes|prime|75n92024c0008|great lakes ambulatory care inc|2026-04-01",
+      "kind": "prime_award",
+      "queryId": "health-naics-primes",
+      "queryLabel": "Prime awards in health NAICS",
+      "awardId": "75N92024C0008",
+      "primeAwardId": "75N92024C0008",
+      "generatedInternalId": "CONT_AWD_75N92024C0008_7529_-NONE-_-NONE-",
+      "recipientName": "GREAT LAKES AMBULATORY CARE INC",
+      "primeRecipientName": null,
+      "recipientUei": "GLA111222333",
+      "amount": 2400000,
+      "date": "2026-04-01",
+      "endDate": "2028-03-31",
+      "description": "Ambulatory chronic care and patient monitoring support services with subcontracting plan.",
+      "awardingAgency": "Department of Health and Human Services",
+      "awardingSubAgency": "National Institutes of Health",
+      "naics": "621999",
+      "awardType": "Definitive Contract",
+      "portalUrl": "https://www.usaspending.gov/award/CONT_AWD_75N92024C0008_7529_-NONE-_-NONE-",
+      "relevanceTags": [
+        "health-naics-primes",
+        "prime-lane",
+        "chronic-care",
+        "monitoring"
+      ]
+    },
+    {
+      "opportunityId": "illinois-health-grants|prime|u2c123456|illinois community health alliance|2026-03-01",
+      "kind": "prime_award",
+      "queryId": "illinois-health-grants",
+      "queryLabel": "Illinois health assistance awards",
+      "awardId": "U2C123456",
+      "primeAwardId": "U2C123456",
+      "generatedInternalId": "ASST_NON_U2C123456_7523",
+      "recipientName": "ILLINOIS COMMUNITY HEALTH ALLIANCE",
+      "primeRecipientName": null,
+      "recipientUei": "ICH444555666",
+      "amount": 750000,
+      "date": "2026-03-01",
+      "endDate": "2027-02-28",
+      "description": "Statewide telehealth and home health capacity expansion for underserved chronic care patients.",
+      "awardingAgency": "Department of Health and Human Services",
+      "awardingSubAgency": "Health Resources and Services Administration",
+      "naics": null,
+      "awardType": "Block Grant",
+      "portalUrl": "https://www.usaspending.gov/award/ASST_NON_U2C123456_7523",
+      "relevanceTags": [
+        "illinois-health-grants",
+        "prime-lane",
+        "chronic-care",
+        "telehealth",
+        "home-health"
+      ]
+    }
+  ]
+}
