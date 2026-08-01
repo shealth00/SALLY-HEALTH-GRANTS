@@ -1,0 +1,81 @@
+{
+  "ranAt": "2026-08-01T20:02:37.316Z",
+  "sourceMode": "fixtures-fallback",
+  "liveError": "health-subawards: USAspending network/egress failure: fetch failed; health-naics-primes: USAspending network/egress failure: fetch failed; illinois-health-grants: USAspending network/egress failure: fetch failed",
+  "window": {
+    "startDate": "2026-05-03",
+    "endDate": "2026-08-01"
+  },
+  "summary": {
+    "total": 4,
+    "subawards": 2,
+    "primeAwards": 2,
+    "added": 0,
+    "removed": 0,
+    "changed": 0
+  },
+  "newOpportunityIds": [],
+  "removedOpportunityIds": [],
+  "hasChanges": false,
+  "preservedLiveSnapshot": false,
+  "admin": {
+    "overall": "degraded",
+    "actionRequired": "P0: Live USAspending monitoring outage extended (~152h). Add api.usaspending.gov and www.usaspending.gov to the Cursor cloud egress allowlist (environment/team Network access), then re-run node govspending/monitor.js --admin and confirm sourceMode is live or live-partial.",
+    "alerts": [
+      {
+        "severity": "critical",
+        "code": "EGRESS_BLOCKED",
+        "message": "health-subawards: USAspending network/egress failure: fetch failed; health-naics-primes: USAspending network/egress failure: fetch failed; illinois-health-grants: USAspending network/egress failure: fetch failed"
+      },
+      {
+        "severity": "critical",
+        "code": "PRODUCTION_ALERTS_SUPPRESSED",
+        "message": "Fixture-fallback results are not production opportunity alerts. Wait for live or live-partial sourceMode."
+      },
+      {
+        "severity": "critical",
+        "code": "PROLONGED_DEGRADED",
+        "message": "Live USAspending monitoring has been degraded for 139 consecutive run(s) (~152h since 2026-07-26T12:04:02.442Z). Production opportunity alerts remain suppressed until live reachability is restored."
+      },
+      {
+        "severity": "critical",
+        "code": "EXTENDED_OUTAGE",
+        "message": "Live USAspending monitoring outage is extended (~152h wall-clock, streak=139). Admin must restore egress/API reachability before opportunity alerts can resume."
+      }
+    ],
+    "liveQuerySuccessCount": 0,
+    "liveQueryFailureCount": 3,
+    "egressBlocked": true,
+    "productionAlertsSuppressed": true,
+    "requiredEgressDomains": [
+      "api.usaspending.gov",
+      "www.usaspending.gov"
+    ],
+    "degradedStreak": 139,
+    "lastLiveSuccessAt": null,
+    "firstDegradedAt": "2026-07-26T12:04:02.442Z",
+    "ops": {
+      "priority": "P0",
+      "blockedOn": "cloud-egress-allowlist",
+      "requiredDomains": [
+        "api.usaspending.gov",
+        "www.usaspending.gov"
+      ],
+      "suppressProductionAlerts": true,
+      "acceptOpportunityDeltas": false,
+      "outageStartedAt": "2026-07-26T12:04:02.442Z",
+      "outageAgeHours": 152,
+      "cadenceGapHours": 1,
+      "backwardClockSkew": false,
+      "extendedOutage": true,
+      "nextChecks": [
+        "P0: escalate to environment admin — allowlist api.usaspending.gov and www.usaspending.gov in Cursor Cloud Network access (team/environment policy)",
+        "Add api.usaspending.gov and www.usaspending.gov to Cursor cloud agent network allowlist",
+        "Re-run: node govspending/monitor.js --admin",
+        "Confirm last-run.json sourceMode is live or live-partial and admin.overall is healthy/attention"
+      ],
+      "clockSource": "env",
+      "clockCorrected": true
+    }
+  }
+}
