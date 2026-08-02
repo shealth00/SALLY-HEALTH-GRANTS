@@ -1,0 +1,77 @@
+{
+  "organization": "Sally Health",
+  "source": {
+    "name": "USAspending.gov",
+    "apiBase": "https://api.usaspending.gov/api/v2",
+    "awardSearchPath": "/search/spending_by_award/",
+    "portalBase": "https://www.usaspending.gov"
+  },
+  "lookbackDays": 90,
+  "limit": 25,
+  "minAwardAmount": 50000,
+  "keywords": [
+    "wound care",
+    "chronic care",
+    "remote patient monitoring",
+    "telehealth",
+    "home health",
+    "care management",
+    "chronic disease",
+    "patient monitoring"
+  ],
+  "naicsCodes": [
+    "621610",
+    "621111",
+    "621399",
+    "621999",
+    "621511",
+    "623110"
+  ],
+  "agencies": [
+    {
+      "type": "awarding",
+      "tier": "toptier",
+      "name": "Department of Health and Human Services"
+    },
+    {
+      "type": "awarding",
+      "tier": "toptier",
+      "name": "Department of Veterans Affairs"
+    }
+  ],
+  "placeOfPerformanceStates": ["IL"],
+  "awardTypeCodes": {
+    "contracts": ["A", "B", "C", "D"],
+    "grants": ["02", "03", "04", "05"]
+  },
+  "queries": [
+    {
+      "id": "health-subawards",
+      "label": "Health subawards (keywords)",
+      "subawards": true,
+      "useKeywords": true,
+      "useNaics": false,
+      "useAgencies": true,
+      "awardTypes": "both"
+    },
+    {
+      "id": "health-naics-primes",
+      "label": "Prime awards in health NAICS",
+      "subawards": false,
+      "useKeywords": false,
+      "useNaics": true,
+      "useAgencies": true,
+      "awardTypes": "contracts"
+    },
+    {
+      "id": "illinois-health-grants",
+      "label": "Illinois health assistance awards",
+      "subawards": false,
+      "useKeywords": true,
+      "useNaics": false,
+      "useAgencies": true,
+      "useIllinoisPop": true,
+      "awardTypes": "grants"
+    }
+  ]
+}
