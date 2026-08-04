@@ -1,0 +1,12 @@
+{
+  "name": "sally-health-govspending-monitor",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "USAspending.gov subcontractor opportunity workflow monitor for Sally Health",
+  "scripts": {
+    "monitor": "node monitor.js",
+    "monitor:fixtures": "node monitor.js --fixtures",
+    "test": "node --test test/monitor.test.js"
+  }
+}
